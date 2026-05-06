@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { login } from "../../api/memberApi";
+import useAuth from "../../hooks/useAuth";
 
 export default function LoginForm() {
   const router = useRouter();
+  const { loginAuth } = useAuth();
 
   const [loginForm, setLoginForm] = useState({
     loginId: "",
@@ -19,6 +22,8 @@ export default function LoginForm() {
       ...prevLoginForm,
       [event.target.name]: event.target.value,
     }));
+
+    setErrorMessage("");
   };
 
   const handleLogin = async (event) => {
@@ -37,17 +42,16 @@ export default function LoginForm() {
     try {
       const data = await login(loginForm);
 
-      // 백엔드 응답 형태에 따라 수정 가능
-      // 예: data.accessToken 또는 data.token
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("nickname", data.nickname);
-
-      window.dispatchEvent(new Event("authChanged"));
+      loginAuth(data);
 
       router.push("/");
     } catch (error) {
       console.log(error);
-      setErrorMessage("아이디 또는 비밀번호가 일치하지 않습니다.");
+
+      const message =
+        error.response?.data?.message || "아이디 또는 비밀번호가 일치하지 않습니다.";
+
+      setErrorMessage(message);
     }
   };
 
@@ -90,6 +94,13 @@ export default function LoginForm() {
           <button type="submit" className="btn btn-dark w-100">
             로그인
           </button>
+
+          <div className="text-center mt-3">
+            <span className="text-muted small">아직 회원이 아니신가요? </span>
+            <Link href="/join" className="small">
+              회원가입
+            </Link>
+          </div>
         </form>
       </div>
     </div>

@@ -6,10 +6,10 @@ import useAuth from "../../hooks/useAuth";
 
 export default function AppHeader() {
   const router = useRouter();
-  const { authInfo, logout } = useAuth();
+  const { authInfo, logoutAuth } = useAuth();
 
   const handleLogout = () => {
-    logout();
+    logoutAuth();
     router.push("/");
   };
 

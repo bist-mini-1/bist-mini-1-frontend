@@ -1,47 +1,84 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+import { isTokenExpired } from "../utils/tokenUtils";
 
-export default function useAuth() {
-  const [authInfo, setAuthInfo] = useState({
-    isLogin: false,
-    nickname: "",
-  });
+const AUTH_CHANGED_EVENT = "authChanged";
 
-  useEffect(() => {
-    const handleAuthChanged = () => {
-      const accessToken = localStorage.getItem("accessToken");
-      const nickname = localStorage.getItem("nickname");
-
-      setAuthInfo({
-        isLogin: !!accessToken,
-        nickname: nickname || "",
-      });
+const getAuthInfo = () => {
+  if (typeof window === "undefined") {
+    return {
+      isLogin: false,
+      nickname: "",
     };
+  }
 
-    handleAuthChanged();
+  const accessToken = localStorage.getItem("accessToken");
+  const nickname = localStorage.getItem("nickname");
 
-    window.addEventListener("authChanged", handleAuthChanged);
-
-    return () => {
-      window.removeEventListener("authChanged", handleAuthChanged);
-    };
-  }, []);
-
-  const logout = () => {
+  if (!accessToken || isTokenExpired(accessToken)) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("nickname");
 
-    setAuthInfo({
+    return {
       isLogin: false,
       nickname: "",
-    });
+    };
+  }
 
-    window.dispatchEvent(new Event("authChanged"));
+  return {
+    isLogin: true,
+    nickname: nickname || "",
+  };
+};
+
+const getSnapshot = () => {
+  return JSON.stringify(getAuthInfo());
+};
+
+const getServerSnapshot = () => {
+  return JSON.stringify({
+    isLogin: false,
+    nickname: "",
+  });
+};
+
+const subscribe = (callback) => {
+  window.addEventListener(AUTH_CHANGED_EVENT, callback);
+  window.addEventListener("storage", callback);
+
+  return () => {
+    window.removeEventListener(AUTH_CHANGED_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+};
+
+export default function useAuth() {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+
+  const authInfo = JSON.parse(snapshot);
+
+  const loginAuth = (data) => {
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("nickname", data.nickname || "");
+
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  };
+
+  const logoutAuth = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("nickname");
+
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
   };
 
   return {
     authInfo,
-    logout,
+    loginAuth,
+    logoutAuth,
   };
 }
