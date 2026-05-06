@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useAuth";
+import Image from "next/image";
 
 export default function AppHeader() {
   const router = useRouter();
@@ -16,8 +17,15 @@ export default function AppHeader() {
   return (
     <nav className="navbar bg-white border-bottom">
       <div className="container">
-        <Link href="/" className="navbar-brand fw-bold">
-          StudyLog
+        <Link href="/" className="navbar-brand d-flex align-items-center">
+          <Image
+            src="/images/slog-logo.png"
+            alt="SLog 로고"
+            width={350}
+            height={50}
+            priority
+            style={{ objectFit: "contain" }}
+          />
         </Link>
 
         <div className="d-flex align-items-center gap-2">
