@@ -1,14 +1,13 @@
-function XxxComponent() {
-  return (
-    <div className="card mt-2">
-      <div className="card-header">
-        XxxComponent
-      </div>
-      <div className="card-body">
-        
-      </div>
-    </div>
-  );
-}
+export const formatDate = (dateTime) => {
+  if (!dateTime) {
+    return "";
+  }
 
-export default XxxComponent;
+  const date = new Date(dateTime);
+
+  return date.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+};

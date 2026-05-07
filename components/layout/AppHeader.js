@@ -1,4 +1,4 @@
-"use client"; 
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,21 +15,30 @@ export default function AppHeader() {
   };
 
   return (
-    <nav className="navbar bg-white border-bottom">
-      <div className="container">
-        <Link href="/" className="navbar-brand d-flex align-items-center">
+    <nav
+      className="navbar bg-white border-bottom"
+      style={{
+        height: "80px",
+      }}
+    >
+      <div className="container d-flex align-items-center justify-content-between">
+        <Link href="/" className="navbar-brand d-flex align-items-center m-0">
           <Image
             src="/images/slog-logo.png"
             alt="SLog 로고"
-            width={350}
+            width={150}
             height={50}
             priority
-            style={{ objectFit: "contain" }}
+            style={{
+              objectFit: "contain",
+              width: "150px",
+              height: "auto",
+            }}
           />
         </Link>
 
         <div className="d-flex align-items-center gap-2">
-          <button type="button" className="btn btn-outline-secondary btn-sm">
+          <button type="button" className="btn btn-sm slog-btn-outline">
             알림
           </button>
 
@@ -37,14 +46,13 @@ export default function AppHeader() {
             <>
               <button
                 type="button"
-                onClick={() => router.push("/Mypage")}
+                onClick={() => router.push("/mypage")}
                 style={{
                   border: "none",
                   background: "none",
                   padding: 0,
                   cursor: "pointer",
                   display: "flex",
-                  flexDirection: "column",
                   alignItems: "center",
                 }}
               >
@@ -53,29 +61,32 @@ export default function AppHeader() {
                     width: "36px",
                     height: "36px",
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #3cb878, #2a9d5c)",
+                    background: "#198754",
                     color: "white",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: "15px",
                     fontWeight: "bold",
-                    boxShadow: "0 2px 6px rgba(44,157,92,0.35)",
+                    boxShadow: "0 2px 6px rgba(25,135,84,0.3)",
                   }}
                 >
-                  {authInfo.nickname ? authInfo.nickname.charAt(0).toUpperCase() : "U"}
+                  {authInfo.nickname
+                    ? authInfo.nickname.charAt(0).toUpperCase()
+                    : "U"}
                 </div>
               </button>
+
               <button
                 type="button"
-                className="btn btn-outline-dark btn-sm"
+                className="btn btn-sm slog-btn-outline"
                 onClick={handleLogout}
               >
                 로그아웃
               </button>
             </>
           ) : (
-            <Link href="/login" className="btn btn-dark btn-sm">
+            <Link href="/login" className="btn btn-sm slog-btn-outline">
               로그인
             </Link>
           )}
