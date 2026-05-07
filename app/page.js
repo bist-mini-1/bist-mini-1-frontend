@@ -9,7 +9,7 @@ import { getPostList } from "@/api/postApi";
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
-  const [size] = useState(9);
+  const [size] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
 
