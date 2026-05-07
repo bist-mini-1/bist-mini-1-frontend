@@ -13,7 +13,7 @@ export default function Home() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await axiosInstance.get("/api/posts");
+        const res = await axiosInstance.get("/api/post");
         const list = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
         setPosts(list);
       } catch {

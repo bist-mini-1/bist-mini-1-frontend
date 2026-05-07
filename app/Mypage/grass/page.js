@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axiosInstance from "../../../api/axiosInstance";
+import { getMyPosts } from "../../../api/mypageApi";
 
 const GREEN = "#3cb878";
 const GREEN_DARK = "#2e7d32";
@@ -60,10 +60,9 @@ export default function GrassPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await axiosInstance.get("/api/members/me/posts");
-        const list = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+        const list = await getMyPosts();
         setPostDates(list.map((p) => p.createdAt).filter(Boolean));
-      } catch { /* API 미구현 시 빈 배열 */ }
+      } catch { /* 기본값 유지 */ }
       finally { setLoading(false); }
     })();
   }, []);
