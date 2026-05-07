@@ -90,9 +90,14 @@ export default function ProfilePage() {
   };
 
   /* ── 닉네임 저장 ── */
+  const NICKNAME_PATTERN = /^[가-힣a-zA-Z0-9]{2,20}$/;
   const saveNickname = async () => {
     if (!newNickname.trim()) {
       alert("닉네임을 입력해 주세요.");
+      return;
+    }
+    if (!NICKNAME_PATTERN.test(newNickname.trim())) {
+      setNickMsg({ text: "닉네임은 2~20자의 한글, 영문, 숫자만 사용할 수 있습니다.", ok: false });
       return;
     }
     setSaving(true);
@@ -111,13 +116,14 @@ export default function ProfilePage() {
   };
 
   /* ── 비밀번호 변경 ── */
+  const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+=\-{}\[\]:;"'<>,.?/]).{8,20}$/;
   const savePassword = async () => {
     if (!curPw || !newPw || !confirmPw) {
       setPwMsg({ text: "모든 필드를 입력해 주세요.", ok: false });
       return;
     }
-    if (newPw.length < 8) {
-      setPwMsg({ text: "새 비밀번호는 8자 이상이어야 합니다.", ok: false });
+    if (!PASSWORD_PATTERN.test(newPw)) {
+      setPwMsg({ text: "비밀번호는 8~20자이며 영문, 숫자, 특수문자를 각각 1개 이상 포함해야 합니다.", ok: false });
       return;
     }
     if (newPw !== confirmPw) {
@@ -359,11 +365,11 @@ export default function ProfilePage() {
                 value={newBio}
                 onChange={(e) => setNewBio(e.target.value)}
                 placeholder="나를 소개하는 글을 작성해 보세요 ✨"
-                maxLength={200}
+                maxLength={1000}
                 style={{ ...input, height: 120, resize: "vertical", lineHeight: 1.7 }}
               />
               <div style={{ fontSize: 11, color: "#aaa", textAlign: "right", marginTop: 4 }}>
-                {newBio.length} / 200
+                {newBio.length} / 1000
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>

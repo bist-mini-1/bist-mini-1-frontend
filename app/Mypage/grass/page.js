@@ -40,7 +40,7 @@ function calcStreak(postDates) {
       else break;
     }
   }
-  let max = 0, streak = 1;
+  let max = 1, streak = 1;
   for (let i = 1; i < dates.length; i++) {
     if (dates[i - 1] - dates[i] === DAY) { streak++; max = Math.max(max, streak); }
     else streak = 1;
