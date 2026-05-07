@@ -12,12 +12,12 @@ export default function ProfilePage() {
   const [section, setSection]   = useState("info"); // info | nickname | password | bio
 
   /* 프로필 데이터 */
-  const [nickname,     setNickname]     = useState("");
+  const [nickname,     setNickname]     = useState(() => localStorage.getItem("nickname") || "");
   const [bio,          setBio]          = useState("");
   const [profileImage, setProfileImage] = useState(null); // URL or null
 
   /* 닉네임 수정 */
-  const [newNickname, setNewNickname] = useState("");
+  const [newNickname, setNewNickname] = useState(() => localStorage.getItem("nickname") || "");
   const [nickMsg,     setNickMsg]     = useState({ text: "", ok: null });
 
   /* 비밀번호 변경 */
@@ -34,14 +34,6 @@ export default function ProfilePage() {
   const [imagePreview, setImagePreview] = useState(null);
   const fileRef = useRef(null);
 
-  /* ── 초기 로드 ── */
-  useEffect(() => {
-    const nick = localStorage.getItem("nickname") || "";
-    setNickname(nick);
-    setNewNickname(nick);
-    fetchProfile();
-  }, []);
-
   const fetchProfile = async () => {
     setLoading(true);
     try {
@@ -57,6 +49,10 @@ export default function ProfilePage() {
       setNickname(nick); setNewNickname(nick);
     } finally { setLoading(false); }
   };
+
+  /* ── 초기 로드 ── */
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchProfile(); }, []);
 
   /* ── 닉네임 중복 확인 ── */
   const checkNickname = async () => {

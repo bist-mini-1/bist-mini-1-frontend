@@ -35,7 +35,37 @@ export default function AppHeader() {
 
           {authInfo.isLogin ? (
             <>
-              <span className="small text-muted">{authInfo.nickname}님</span>
+              <button
+                type="button"
+                onClick={() => router.push("/Mypage")}
+                style={{
+                  border: "none",
+                  background: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3cb878, #2a9d5c)",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "15px",
+                    fontWeight: "bold",
+                    boxShadow: "0 2px 6px rgba(44,157,92,0.35)",
+                  }}
+                >
+                  {authInfo.nickname ? authInfo.nickname.charAt(0).toUpperCase() : "U"}
+                </div>
+              </button>
               <button
                 type="button"
                 className="btn btn-outline-dark btn-sm"
