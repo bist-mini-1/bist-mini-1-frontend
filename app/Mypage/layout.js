@@ -14,12 +14,16 @@ const NAV = [
 export default function MyPageLayout({ children }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [nickname, setNickname]   = useState(() => localStorage.getItem("nickname") || "");
-  const [avatarUrl, setAvatarUrl] = useState(() => localStorage.getItem("profileImageUrl") || null);
+  const [nickname, setNickname]   = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) { router.push("/login"); return; }
+
+    // 초기값을 localStorage에서 읽어서 세팅 (서버 렌더링 이후 클라이언트에서만 실행)
+    setNickname(localStorage.getItem("nickname") || "");
+    setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
 
     const sync = () => {
       setNickname(localStorage.getItem("nickname") || "");

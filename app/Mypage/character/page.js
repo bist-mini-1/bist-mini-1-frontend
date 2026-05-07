@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axiosInstance from "../../../api/axiosInstance";
+import { getMyPosts } from "../../../api/mypageApi";
 
 const GREEN = "#3cb878";
 const GREEN_DARK = "#2e7d32";
@@ -29,15 +29,14 @@ export default function CharacterPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await axiosInstance.get("/api/members/me/posts");
-        const list = Array.isArray(res.data) ? res.data : (res.data?.content ?? []);
+        const list = await getMyPosts();
         setStats({
           postCount: list.length,
           streak: 0,
           viewCount: list.reduce((s, p) => s + (p.viewCount || 0), 0),
           likeCount: list.reduce((s, p) => s + (p.likeCount || 0), 0),
         });
-      } catch { /* API 미구현 시 기본값 */ }
+      } catch { /* 기본값 유지 */ }
       finally { setLoading(false); }
     })();
   }, []);
