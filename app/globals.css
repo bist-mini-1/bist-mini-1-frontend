@@ -1,13 +1,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --slog-green: #2f8f5b;
+  --slog-green-dark: #198754;
+  --slog-green-soft: #eef7f1;
+  --slog-green-border: #d8eadf;
+  --slog-text-muted: #6c757d;
+  --slog-heart: #f06595;
 }
 
 html {
@@ -33,8 +33,6 @@ body {
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
@@ -42,8 +40,175 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Bootstrap 기반 SLog 버튼 */
+.slog-btn-outline {
+  --bs-btn-color: var(--slog-green);
+  --bs-btn-border-color: var(--slog-green);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--slog-green);
+  --bs-btn-hover-border-color: var(--slog-green);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--slog-green);
+  --bs-btn-active-border-color: var(--slog-green);
+
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slog-btn-write {
+  --bs-btn-color: var(--slog-green);
+  --bs-btn-border-color: var(--slog-green);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--slog-green);
+  --bs-btn-hover-border-color: var(--slog-green);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--slog-green);
+  --bs-btn-active-border-color: var(--slog-green);
+
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slog-btn-write:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(47, 143, 91, 0.18);
+}
+
+/* 메인 상단: 최신 + 새 글 작성 */
+.post-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.post-tab-active {
+  position: relative;
+  color: var(--slog-green-dark);
+  font-size: 17px;
+  font-weight: 800;
+  padding-bottom: 12px;
+}
+
+.post-tab-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 34px;
+  height: 3px;
+  background-color: var(--slog-green-dark);
+  border-radius: 999px;
+}
+
+/* 페이지네이션 */
+.slog-pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 36px;
+  margin-bottom: 24px;
+}
+
+.slog-page-button {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--slog-green-border);
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #2f5f46;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.slog-page-button:hover:not(:disabled) {
+  border-color: var(--slog-green);
+  background-color: var(--slog-green-soft);
+  color: var(--slog-green);
+}
+
+.slog-page-button.active {
+  border-color: var(--slog-green);
+  background-color: var(--slog-green);
+  color: #ffffff;
+}
+
+.slog-page-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* 게시글 카드 */
+.slog-post-card {
+  height: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.slog-post-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+}
+
+.slog-post-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 170px;
+  background-color: #f6f8f7;
+  overflow: hidden;
+}
+
+.slog-post-no-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f4fbf6 0%, var(--slog-green-soft) 100%);
+  color: var(--slog-green);
+}
+
+.slog-tag {
+  background-color: var(--slog-green-soft);
+  color: var(--slog-green);
+  font-weight: 700;
+}
+
+.slog-post-preview {
+  min-height: 40px;
+  margin-bottom: 18px;
+  color: var(--slog-text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.slog-post-like {
+  color: var(--slog-heart);
+  font-weight: 800;
+}
+
+.slog-heart-icon {
+  font-size: 14px;
+  line-height: 1;
+  transform: translateY(1px);
 }
