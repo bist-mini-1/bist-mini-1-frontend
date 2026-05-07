@@ -56,7 +56,7 @@ export default function MyPageLayout({ children }) {
           <div style={{ color: "white", fontWeight: 700, fontSize: 14, marginBottom: 3 }}>
             {nickname || "사용자"}
           </div>
-          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>StudyLog 멤버</div>
+          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>SLog 멤버</div>
         </div>
 
         {/* 메뉴 */}
