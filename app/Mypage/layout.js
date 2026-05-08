@@ -4,26 +4,41 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getMyProfile, getFollowCount } from "../../api/mypageApi";
 
 const NAV = [
-  { href: "/Mypage/character", label: "캐릭터 성장", icon: "🌱" },
-  { href: "/Mypage/grass",     label: "잔디",        icon: "🔥" },
-  { href: "/Mypage/profile",   label: "설정",  icon: "👤" },
+  { href: "/Mypage/character", label: "캐릭터 성장", icon: "bi-person-badge-fill" },
+  { href: "/Mypage/grass",     label: "잔디",        icon: "bi-calendar2-check-fill" },
+  { href: "/Mypage/posts",     label: "게시글 조회", icon: "bi-collection-fill" },
+  { href: "/Mypage/profile",   label: "설정",        icon: "bi-sliders2" },
 ];
 
 export default function MyPageLayout({ children }) {
   const pathname = usePathname();
   const router   = useRouter();
-  const [nickname, setNickname]   = useState("");
-  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [nickname, setNickname]     = useState("");
+  const [avatarUrl, setAvatarUrl]   = useState(null);
+  const [followCount, setFollowCount] = useState({ followerCount: 0, followingCount: 0 });
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) { router.push("/login"); return; }
 
-    // 초기값을 localStorage에서 읽어서 세팅 (서버 렌더링 이후 클라이언트에서만 실행)
-    setNickname(localStorage.getItem("nickname") || "");
-    setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
+    // 팔로워/팔로잉 수 조회 + 초기 닉네임/아바타 세팅
+    const init = async () => {
+      setNickname(localStorage.getItem("nickname") || "");
+      setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
+      try {
+        const profile = await getMyProfile();
+        if (profile?.memberId) {
+          const counts = await getFollowCount(profile.memberId);
+          if (counts) setFollowCount(counts);
+        }
+      } catch {
+        // 조회 실패 시 기본값 유지
+      }
+    };
+    init();
 
     const sync = () => {
       setNickname(localStorage.getItem("nickname") || "");
@@ -57,16 +72,33 @@ export default function MyPageLayout({ children }) {
               {nickname ? nickname.charAt(0).toUpperCase() : "U"}
             </div>
           )}
-          <div style={{ color: "white", fontWeight: 700, fontSize: 14, marginBottom: 3 }}>
+          <div style={{ color: "white", fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
             {nickname || "사용자"}
           </div>
-          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>SLog 멤버</div>
+
+          {/* 팔로워 / 팔로잉 숫자 */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 6 }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>
+                {followCount.followerCount}
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 2 }}>팔로워</div>
+            </div>
+            <div style={{ width: 1, background: "rgba(255,255,255,0.2)" }} />
+            <div style={{ textAlign: "center" }}>
+              <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>
+                {followCount.followingCount}
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 2 }}>팔로잉</div>
+            </div>
+          </div>
+
         </div>
 
         {/* 메뉴 */}
         <nav style={{ padding: "14px 10px 20px" }}>
           {NAV.map(({ href, label, icon }) => {
-            const active = pathname === href;
+            const active = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link key={href} href={href} style={{
                 display: "flex", alignItems: "center", gap: 10,
@@ -80,7 +112,10 @@ export default function MyPageLayout({ children }) {
                 onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
                 onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
               >
-                <span style={{ fontSize: 17 }}>{icon}</span>
+                {icon.startsWith("bi-")
+                  ? <i className={`bi ${icon}`} style={{ fontSize: 16, width: 18, textAlign: "center" }} />
+                  : <span style={{ fontSize: 17 }}>{icon}</span>
+                }
                 {label}
               </Link>
             );
