@@ -31,16 +31,18 @@ export default function AppHeader() {
             priority
             style={{
               objectFit: "contain",
-              width: "150px",
-              height: "auto",
             }}
           />
         </Link>
 
         <div className="d-flex align-items-center gap-2">
-          <button type="button" className="btn btn-sm slog-btn-outline">
-            알림
-          </button>
+          <button
+  type="button"
+  className="btn btn-sm slog-icon-button"
+  aria-label="알림"
+>
+  <i className="bi bi-bell"></i>
+</button>
 
           {authInfo.isLogin ? (
             <>

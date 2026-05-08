@@ -340,3 +340,22 @@ a {
   background-color: #f8f9fa;
   color: var(--slog-green);
 }
+
+.slog-icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--slog-green);
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: var(--slog-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.slog-icon-button:hover {
+  background-color: var(--slog-green);
+  color: #ffffff;
+}
