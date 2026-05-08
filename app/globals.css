@@ -211,3 +211,62 @@ a {
   font-size: 14px;
   line-height: 1;
 }
+
+.slog-like-button {
+  color: #adb5bd;
+  font-weight: 800;
+  background-color: transparent;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.slog-like-button:hover {
+  color: var(--slog-heart);
+  transform: translateY(-1px);
+}
+
+.slog-like-button.liked {
+  color: var(--slog-heart);
+}
+
+.slog-like-button:disabled {
+  opacity: 0.6;
+}
+
+.slog-bookmark-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.94);
+  color: #adb5bd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease,
+    background-color 0.15s ease;
+  z-index: 2;
+}
+
+.slog-post-card:hover .slog-bookmark-button,
+.slog-bookmark-button.bookmarked {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slog-bookmark-button:hover {
+  background-color: #ffffff;
+  color: var(--slog-green);
+}
+
+.slog-bookmark-button.bookmarked {
+  color: var(--slog-green);
+}
+
+.slog-bookmark-button:disabled {
+  opacity: 0.6;
+}

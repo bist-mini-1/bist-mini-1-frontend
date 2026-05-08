@@ -1,38 +1,129 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDate } from "@/utils/formatDate";
+import { togglePostLike, togglePostBookmark } from "@/api/postApi";
+import useAuth from "@/hooks/useAuth";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export default function PostCard({ post }) {
+  const router = useRouter();
+  const { authInfo } = useAuth();
+
+  const [liked, setLiked] = useState(Boolean(post.isLiked));
+  const [bookmarked, setBookmarked] = useState(Boolean(post.isBookmarked));
+  const [likeCount, setLikeCount] = useState(post.likeCount ?? 0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+
   const detailUrl = `/posts/${post.postId}`;
   const thumbnailSrc = post.thumbnailUrl
     ? `${API_BASE_URL}${post.thumbnailUrl}`
     : null;
 
+  const requireLogin = () => {
+    if (!authInfo.isLogin) {
+      alert("로그인이 필요한 기능입니다.");
+      router.push("/login");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleLikeClick = async () => {
+    if (!requireLogin() || likeLoading) {
+      return;
+    }
+
+    try {
+      setLikeLoading(true);
+
+      const result = await togglePostLike(post.postId);
+      const nextLiked = result.data;
+
+      setLiked(nextLiked);
+      setLikeCount((prev) => {
+        if (nextLiked) {
+          return prev + 1;
+        }
+
+        return Math.max(prev - 1, 0);
+      });
+    } catch (error) {
+      console.error(error);
+      alert("좋아요 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLikeLoading(false);
+    }
+  };
+
+  const handleBookmarkClick = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!requireLogin() || bookmarkLoading) {
+      return;
+    }
+
+    try {
+      setBookmarkLoading(true);
+
+      const result = await togglePostBookmark(post.postId);
+      setBookmarked(result.data);
+    } catch (error) {
+      console.error(error);
+      alert("북마크 처리 중 오류가 발생했습니다.");
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
+
   return (
     <article className="card h-100 border-0 slog-post-card">
-      <Link href={detailUrl} className="text-decoration-none">
-        {thumbnailSrc ? (
-          <div className="slog-post-thumbnail">
-            <Image
-              src={thumbnailSrc}
-              alt={post.title || "게시글 썸네일"}
-              fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              style={{ objectFit: "cover" }}
-              unoptimized
-            />
-          </div>
-        ) : (
-          <div className="slog-post-thumbnail slog-post-no-image">
-            <div className="fs-3 mb-2">🌱</div>
-            <div className="fw-bold fs-5">SLog</div>
-            <div className="small mt-1">기록이 자라는 공간</div>
-          </div>
-        )}
-      </Link>
+      <div className="position-relative">
+        <Link href={detailUrl} className="text-decoration-none">
+          {thumbnailSrc ? (
+            <div className="slog-post-thumbnail">
+              <Image
+                src={thumbnailSrc}
+                alt={post.title || "게시글 썸네일"}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                style={{ objectFit: "cover" }}
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="slog-post-thumbnail slog-post-no-image">
+              <div className="fs-3 mb-2">🌱</div>
+              <div className="fw-bold fs-5">SLog</div>
+              <div className="small mt-1">기록이 자라는 공간</div>
+            </div>
+          )}
+        </Link>
+
+        <button
+          type="button"
+          className={`btn p-0 border-0 slog-bookmark-button ${
+            bookmarked ? "bookmarked" : ""
+          }`}
+          onClick={handleBookmarkClick}
+          disabled={bookmarkLoading}
+          aria-label="북마크"
+        >
+          <i
+            className={`bi ${
+              bookmarked ? "bi-bookmark-fill" : "bi-bookmark"
+            }`}
+          ></i>
+        </button>
+      </div>
 
       <div className="card-body">
         {post.tags?.length > 0 && (
@@ -65,10 +156,18 @@ export default function PostCard({ post }) {
           by <strong className="text-dark">{post.nickname}</strong>
         </span>
 
-        <span className="d-inline-flex align-items-center gap-1 slog-post-like">
-          <i className="bi bi-heart-fill slog-heart-icon"></i>
-          <span>{post.likeCount ?? 0}</span>
-        </span>
+        <button
+          type="button"
+          className={`btn p-0 border-0 d-inline-flex align-items-center gap-1 slog-like-button ${
+            liked ? "liked" : ""
+          }`}
+          onClick={handleLikeClick}
+          disabled={likeLoading}
+          aria-label="좋아요"
+        >
+          <i className={`bi ${liked ? "bi-heart-fill" : "bi-heart"}`}></i>
+          <span>{likeCount}</span>
+        </button>
       </div>
     </article>
   );
