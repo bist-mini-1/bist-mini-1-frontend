@@ -7,39 +7,39 @@ import Pagination from "@/components/common/Pagination";
 import SearchBox from "@/components/common/SearchBox";
 import { getPostList } from "@/api/postApi";
 
+const PAGE_SIZE = 12;
+
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
-  const [size] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchPostList = async (pageNumber) => {
-    try {
-      setLoading(true);
-
-      const data = await getPostList({
-        page: pageNumber,
-        size,
-        keyword: searchKeyword,
-      });
-
-      setPosts(data.posts || []);
-      setPage(data.page || pageNumber);
-      setTotalPages(data.totalPages || 1);
-      setTotalCount(data.totalCount || 0);
-    } catch (error) {
-      console.error(error);
-      alert("게시글 목록을 불러오지 못했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchPostList(page);
+    const fetchPostList = async () => {
+      try {
+        setLoading(true);
+
+        const data = await getPostList({
+          page,
+          size: PAGE_SIZE,
+          keyword: searchKeyword,
+        });
+
+        setPosts(data.posts || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalCount(data.totalCount || 0);
+      } catch (error) {
+        console.error(error);
+        alert("게시글 목록을 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPostList();
   }, [page, searchKeyword]);
 
   const handlePageChange = (pageNumber) => {
