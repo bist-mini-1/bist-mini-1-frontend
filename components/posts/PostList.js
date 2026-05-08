@@ -1,11 +1,14 @@
 import PostCard from "./PostCard";
 
-export default function PostList({ posts }) {
+export default function PostList({
+  posts,
+  emptyMessage = "등록된 게시글이 없습니다.",
+}) {
   if (!posts || posts.length === 0) {
     return (
-      <div className="card">
+      <div className="card border-0 shadow-sm">
         <div className="card-body text-center text-muted py-5">
-          등록된 게시글이 없습니다.
+          {emptyMessage}
         </div>
       </div>
     );
