@@ -1,14 +1,15 @@
 "use client";
 
 import axiosInstance from "@/api/axiosInstance";
-import { isMyPost } from "@/api/postApi";
+import { deletePost, isMyPost } from "@/api/postApi";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import useAuth from "@/hooks/useAuth";
 
 function PostDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { authInfo } = useAuth();
   const bno = useMemo(() => {
     const value = params?.bno;
@@ -19,6 +20,8 @@ function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [canEdit, setCanEdit] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!bno) {
@@ -115,6 +118,41 @@ function PostDetailPage() {
         .filter((tag) => tag.label && tag.label !== "undefined")
     : [];
 
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleCancelDelete = () => {
+    if (deleting) {
+      return;
+    }
+
+    setShowDeleteConfirm(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!post?.postId || deleting) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await deletePost(post.postId);
+      setShowDeleteConfirm(false);
+      router.push("/");
+    } catch (deleteError) {
+      console.error("deletePost error:", deleteError);
+
+      if (deleteError?.response?.status === 403) {
+        alert("작성자만 게시글을 삭제할 수 있습니다.");
+      } else {
+        alert("게시글 삭제에 실패했습니다.");
+      }
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (!bno) {
     return (
       <div className="alert alert-warning mb-0" role="alert">
@@ -162,9 +200,18 @@ function PostDetailPage() {
             </div>
             <div className="d-flex align-items-center gap-2 flex-wrap">
               {canEdit && post?.postId ? (
-                <Link href={`/post/PostUpdate/${post.postId}`} className="btn btn-outline-secondary btn-sm px-3 py-2 rounded-pill">
-                  수정
-                </Link>
+                <>
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    className="btn btn-outline-danger btn-sm px-3 py-2 rounded-pill"
+                  >
+                    삭제
+                  </button>
+                  <Link href={`/post/PostUpdate/${post.postId}`} className="btn btn-outline-secondary btn-sm px-3 py-2 rounded-pill">
+                    수정
+                  </Link>
+                </>
               ) : null}
               <Link href="/post/PostList" className="btn btn-outline-secondary btn-sm px-3 py-2 rounded-pill">
                 목록으로
@@ -296,6 +343,38 @@ function PostDetailPage() {
           )}
         </div>
       </section>
+
+      {showDeleteConfirm ? (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.35)", zIndex: 1050 }}
+        >
+          <div className="bg-white rounded-4 shadow p-4" style={{ width: "min(92vw, 420px)" }}>
+            <div className="fw-bold mb-2" style={{ fontSize: "1.05rem" }}>
+              삭제하시겠습니까?
+            </div>
+            <div className="text-muted small mb-4">삭제한 게시글은 복구되지 않을 수 있습니다.</div>
+            <div className="d-flex justify-content-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelDelete}
+                className="btn btn-outline-secondary px-4"
+                disabled={deleting}
+              >
+                아니오
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="btn btn-danger px-4"
+                disabled={deleting}
+              >
+                {deleting ? "삭제 중..." : "예"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
