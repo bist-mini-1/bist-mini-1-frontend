@@ -18,16 +18,12 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
 
   /* 프로필 데이터 */
-  const [nickname, setNickname] = useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem("nickname") : "") || ""
-  );
+  const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
   const [profileImage, setProfileImage] = useState(null); // 절대 URL or null
 
   /* 닉네임 수정 */
-  const [newNickname, setNewNickname] = useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem("nickname") : "") || ""
-  );
+  const [newNickname, setNewNickname] = useState("");
   const [nickMsg, setNickMsg] = useState({ text: "", ok: null });
 
   /* 비밀번호 변경 */
@@ -206,7 +202,10 @@ export default function ProfilePage() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#222", margin: 0 }}>👤 설정</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#222", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          <i className="bi bi-sliders2" style={{ color: "#555" }} />
+          설정
+        </h2>
         <p style={{ fontSize: 13, color: "#888", margin: "6px 0 0" }}>개인 정보를 관리해요</p>
       </div>
 
@@ -214,7 +213,7 @@ export default function ProfilePage() {
 
         {/* ── 프로필 사진 ── */}
         <div style={card}>
-          <SectionTitle>🖼 프로필 사진</SectionTitle>
+          <SectionTitle><i className="bi bi-person-circle" style={{ marginRight: 6 }} />프로필 사진</SectionTitle>
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 16 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               {displayImage ? (
@@ -269,7 +268,7 @@ export default function ProfilePage() {
 
         {/* ── 닉네임 수정 ── */}
         <div style={card}>
-          <SectionTitle>✏️ 닉네임 수정</SectionTitle>
+          <SectionTitle><i className="bi bi-person-badge-fill" style={{ marginRight: 6 }} />닉네임 수정</SectionTitle>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <Label>현재 닉네임</Label>
@@ -306,7 +305,7 @@ export default function ProfilePage() {
 
         {/* ── 비밀번호 변경 ── */}
         <div style={card}>
-          <SectionTitle>🔒 비밀번호 변경</SectionTitle>
+          <SectionTitle><i className="bi bi-shield-lock-fill" style={{ marginRight: 6 }} />비밀번호 변경</SectionTitle>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <Label>현재 비밀번호</Label>
@@ -358,7 +357,7 @@ export default function ProfilePage() {
 
         {/* ── 자기소개 ── */}
         <div style={card}>
-          <SectionTitle>💬 자기소개</SectionTitle>
+          <SectionTitle><i className="bi bi-chat-quote-fill" style={{ marginRight: 6 }} />자기소개</SectionTitle>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <textarea

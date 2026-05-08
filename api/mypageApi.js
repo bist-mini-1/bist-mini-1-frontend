@@ -59,3 +59,18 @@ export const checkNicknameDuplicate = async (nickname) => {
   });
   return res.data === true; // boolean 반환
 };
+
+/** 북마크한 게시글 목록 조회 → MyPostResponse[] */
+export const getBookmarkedPosts = async () => {
+  const res = await axiosInstance.get("/api/members/me/bookmarks");
+  return res.data.data ?? [];
+};
+
+/**
+ * 팔로워/팔로잉 수 조회 → { followerCount, followingCount }
+ * @param {number} memberId
+ */
+export const getFollowCount = async (memberId) => {
+  const res = await axiosInstance.get(`/api/follows/${memberId}/count`);
+  return res.data.data; // { followerCount, followingCount }
+};
