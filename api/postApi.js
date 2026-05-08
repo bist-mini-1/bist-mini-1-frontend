@@ -11,3 +11,13 @@ export const getPostList = async ({ page = 1, size = 10 }) => {
 
   return response.data;
 };
+
+export const togglePostLike = async (postId) => {
+  const response = await axiosInstance.post(`/api/posts/${postId}/like`);
+  return response.data;
+};
+
+export const togglePostBookmark = async (postId) => {
+  const response = await axiosInstance.post(`/api/posts/${postId}/bookmark`);
+  return response.data;
+};
