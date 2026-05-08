@@ -46,7 +46,7 @@ export default function AppHeader() {
             <>
               <button
                 type="button"
-                onClick={() => router.push("/mypage")}
+                onClick={() => router.push("/Mypage/character")}
                 style={{
                   border: "none",
                   background: "none",

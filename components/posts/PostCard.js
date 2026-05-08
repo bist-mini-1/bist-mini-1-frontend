@@ -6,7 +6,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export default function PostCard({ post }) {
-  const detailUrl = `/post/${post.postId}`;
+  const detailUrl = `/posts/${post.postId}`;
   const thumbnailSrc = post.thumbnailUrl
     ? `${API_BASE_URL}${post.thumbnailUrl}`
     : null;
@@ -66,7 +66,7 @@ export default function PostCard({ post }) {
         </span>
 
         <span className="d-inline-flex align-items-center gap-1 slog-post-like">
-          <span className="slog-heart-icon">❤</span>
+          <i className="bi bi-heart-fill slog-heart-icon"></i>
           <span>{post.likeCount ?? 0}</span>
         </span>
       </div>
