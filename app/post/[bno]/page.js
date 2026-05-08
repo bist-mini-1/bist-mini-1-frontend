@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import useAuth from "@/hooks/useAuth";
+import CommentSection from "@/components/comments/CommentSection";
 
 function PostDetailPage() {
   const params = useParams();
@@ -343,6 +344,10 @@ function PostDetailPage() {
           )}
         </div>
       </section>
+
+      {post?.postId && (
+        <CommentSection postId={post.postId} />
+      )}
 
       {showDeleteConfirm ? (
         <div
