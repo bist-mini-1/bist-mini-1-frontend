@@ -21,3 +21,32 @@ export const togglePostBookmark = async (postId) => {
   const response = await axiosInstance.post(`/api/posts/${postId}/bookmark`);
   return response.data;
 };
+export const getPostDetail = async (postId) => {
+  const response = await axiosInstance.get(`/api/posts/${postId}`);
+
+  return response.data;
+};
+
+export const isMyPost = async (postId) => {
+  const response = await axiosInstance.get(`/api/posts/${postId}/mine`) ;
+
+  return response.data;
+};
+
+export const createPost = async (data) => {
+  const response = await axiosInstance.post("/api/posts", data);
+
+  return response.data;
+};
+
+export const updatePost = async (postId, data) => {
+  const response = await axiosInstance.put(`/api/posts/${postId}`, data);
+
+  return response.data;
+};
+
+export const deletePost = async (postId) => {
+  const response = await axiosInstance.delete(`/api/posts/${postId}`);
+
+  return response.data;
+};
