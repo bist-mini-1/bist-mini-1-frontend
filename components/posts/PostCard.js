@@ -21,7 +21,7 @@ export default function PostCard({ post }) {
   const [likeLoading, setLikeLoading] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
-  const detailUrl = `/posts/${post.postId}`;
+  const detailUrl = `/post/${post.postId}`;
   const thumbnailSrc = post.thumbnailUrl
     ? `${API_BASE_URL}${post.thumbnailUrl}`
     : null;

@@ -45,7 +45,6 @@ export default function PostUpdatePage() {
 
   useEffect(() => {
     if (!bno) {
-      setLoading(false);
       return;
     }
 
@@ -83,8 +82,6 @@ export default function PostUpdatePage() {
 
   useEffect(() => {
     if (!authInfo.isLogin || !initialValues?.postId) {
-      setCanEdit(false);
-      setCheckingPermission(false);
       return;
     }
 
