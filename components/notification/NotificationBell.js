@@ -23,11 +23,12 @@ export default function NotificationBell() {
     const fetchInitialData = async () => {
       try {
         const response = await getNotifications();
-        const data = response.data.data || [];
+        const data = response.data || [];
+        console.log("Notifications: Initial data fetched:", data);
         setNotifications(data);
         setUnreadCount(data.filter((n) => n.isRead === "N").length);
       } catch (error) {
-        console.error("알림을 불러오는데 실패했습니다.", error);
+        console.error("Notifications: Failed to fetch initial data:", error);
       }
     };
 
