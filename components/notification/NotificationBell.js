@@ -23,7 +23,7 @@ export default function NotificationBell() {
     const fetchInitialData = async () => {
       try {
         const response = await getNotifications();
-        const data = response.data || [];
+        const data = response.data.data || [];
         setNotifications(data);
         setUnreadCount(data.filter((n) => n.isRead === "N").length);
       } catch (error) {
@@ -45,7 +45,7 @@ export default function NotificationBell() {
       return;
     }
 
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"}/api/notifications/subscribe`;
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/notifications/subscribe`;
     console.log("SSE: Connecting to", apiUrl);
 
     const eventSource = new EventSourcePolyfill(apiUrl, {
