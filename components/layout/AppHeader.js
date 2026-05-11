@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useAuth";
 import Image from "next/image";
+import NotificationBell from "../notification/NotificationBell";
+
+
 
 export default function AppHeader() {
   const router = useRouter();
@@ -36,13 +39,8 @@ export default function AppHeader() {
         </Link>
 
         <div className="d-flex align-items-center gap-2">
-          <button
-  type="button"
-  className="btn btn-sm slog-icon-button"
-  aria-label="알림"
->
-  <i className="bi bi-bell"></i>
-</button>
+          <NotificationBell />
+
 
           {authInfo.isLogin ? (
             <>
