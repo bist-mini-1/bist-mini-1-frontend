@@ -120,6 +120,13 @@ const ChatList = ({ onSelectRoom }) => {
                       {room.lastMessage}
                     </div>
                   </div>
+                  {room.unreadCount > 0 && (
+                    <div className="ms-2 flex-shrink-0">
+                      <span className="badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '5px 7px' }}>
+                        {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                      </span>
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
