@@ -4,7 +4,7 @@ import axiosInstance from "@/api/axiosInstance";
 import { deletePost, isMyPost } from "@/api/postApi";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import CommentSection from "@/components/comments/CommentSection";
 
@@ -23,6 +23,8 @@ function PostDetailPage() {
   const [canEdit, setCanEdit] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const actionMenuRef = useRef(null);
 
   useEffect(() => {
     if (!bno) {
@@ -91,6 +93,28 @@ function PostDetailPage() {
       isMounted = false;
     };
   }, [authInfo.isLogin, post?.postId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setShowActionMenu(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setShowActionMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const displayDate = post?.createdAt
     ? new Date(post.createdAt).toLocaleString("ko-KR")
@@ -164,7 +188,7 @@ function PostDetailPage() {
 
   const articleFrameStyle = {
     position: "relative",
-    maxWidth: 920,
+    width: "100%",
     margin: "0 auto",
     padding: 24,
     background: "#ffffff",
@@ -194,36 +218,61 @@ function PostDetailPage() {
     <div className="container-fluid px-0">
       <section style={articleFrameStyle}>
         <div>
-          <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
-            <div className="d-flex align-items-center gap-2 flex-wrap">
-              <span className="badge rounded-pill text-bg-light text-dark px-3 py-2 border fw-semibold">POST</span>
-              <span className="text-dark small fw-semibold">blog / article</span>
-            </div>
-            <div className="d-flex align-items-center gap-2 flex-wrap">
-              {canEdit && post?.postId ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleDeleteClick}
-                    className="btn btn-outline-danger btn-sm px-3 py-2 rounded-pill"
-                  >
-                    삭제
-                  </button>
-                  <Link href={`/post/PostUpdate/${post.postId}`} className="btn btn-outline-secondary btn-sm px-3 py-2 rounded-pill">
-                    수정
-                  </Link>
-                </>
-              ) : null}
-              <Link href="/post/PostList" className="btn btn-outline-secondary btn-sm px-3 py-2 rounded-pill">
-                목록으로
-              </Link>
-            </div>
-          </div>
-
           <header style={titleBlockStyle} className="mb-4">
-            <h1 style={{ fontSize: "clamp(1.85rem, 4vw, 3rem)", fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.03em" }} className="mb-3">
-              {post?.title || `게시글 ${bno || "상세"}`}
-            </h1>
+            <div className="d-flex align-items-start justify-content-between gap-2 flex-wrap mb-2">
+              <h1 style={{ fontSize: "clamp(1.85rem, 4vw, 3rem)", fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.03em" }} className="mb-0 flex-grow-1">
+                {post?.title || `게시글 ${bno || "상세"}`}
+              </h1>
+
+              <div className="position-relative" ref={actionMenuRef}>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center"
+                  style={{ width: 36, height: 36 }}
+                  aria-label="게시글 작업 메뉴"
+                  aria-expanded={showActionMenu}
+                  onClick={() => setShowActionMenu((prev) => !prev)}
+                >
+                  <i className="bi bi-three-dots-vertical" />
+                </button>
+
+                {showActionMenu ? (
+                  <div
+                    className="dropdown-menu dropdown-menu-end show shadow-sm border"
+                    style={{ display: "block", minWidth: 140 }}
+                  >
+                    {canEdit && post?.postId ? (
+                      <>
+                        <button
+                          type="button"
+                          className="dropdown-item text-danger"
+                          onClick={() => {
+                            setShowActionMenu(false);
+                            handleDeleteClick();
+                          }}
+                        >
+                          삭제
+                        </button>
+                        <Link
+                          href={`/post/PostUpdate/${post.postId}`}
+                          className="dropdown-item"
+                          onClick={() => setShowActionMenu(false)}
+                        >
+                          수정
+                        </Link>
+                      </>
+                    ) : null}
+                    <Link
+                      href="/post/PostList"
+                      className="dropdown-item"
+                      onClick={() => setShowActionMenu(false)}
+                    >
+                      목록으로
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            </div>
             <div className="d-flex flex-wrap gap-2 align-items-center text-muted fw-semibold" style={{ fontSize: 13 }}>
               <span><span className="text-dark fw-bold">작성자</span> {post?.nickname ?? "-"}</span>
               <span>•</span>
@@ -269,27 +318,6 @@ function PostDetailPage() {
               </section>
 
               <section className="mb-4">
-                <div className="d-flex flex-wrap gap-2 mb-3">
-                  <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}>
-                    <span className="fw-bold">공개</span> {post.isPublic ?? "-"}
-                  </span>
-                  <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}>
-                    <span className="fw-bold">임시저장</span> {post.isTemp ?? "-"}
-                  </span>
-                  <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}>
-                    <span className="fw-bold">삭제 여부</span> {post.isDeleted ?? "-"}
-                  </span>
-                  <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}>
-                    <span className="fw-bold">조회</span> {post.viewCount ?? 0}
-                  </span>
-                  <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}>
-                    <span className="fw-bold">좋아요</span> {post.likeCount ?? 0}
-                  </span>
-                  <span className="badge rounded-pill px-3 py-2" style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}>
-                    <span className="fw-bold">댓글</span> {post.commentCount ?? 0}
-                  </span>
-                </div>
-
                 <div className="d-flex align-items-center gap-2 text-muted small mb-2">
                   <span className="text-dark fw-bold">작성일</span>
                   <span>•</span>
