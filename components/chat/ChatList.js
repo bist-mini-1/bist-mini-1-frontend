@@ -33,13 +33,20 @@ const ChatList = ({ onSelectRoom }) => {
     const fetchFollowings = async () => {
       try {
         setLoading(true);
-        const data = await getFollowingList();
-        setFollowings(data);
+        // localStorage에서 내 정보 가져오기
+        const myId = localStorage.getItem('memberId');
+        if (!myId) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+        
+        const data = await getFollowingList(myId);
+        setFollowings(data.users || []); // FollowListResponse에서 users 추출
         setShowFollowing(true);
       } catch (error) {
         console.error("팔로우 목록 로드 실패:", error);
-        alert("팔로우 목록을 불러올 수 없습니다. (팔로우 기능 브랜치 병합 대기 중)");
-        setFollowings([]); // 빈 목록으로 설정
+        alert("팔로우 목록을 불러올 수 없습니다.");
+        setFollowings([]);
         setShowFollowing(false);
       } finally {
         setLoading(false);
@@ -133,7 +140,7 @@ const ChatList = ({ onSelectRoom }) => {
                   onClick={() => handleStartChat(member.memberId)}
                 >
                   <img 
-                    src={member.profileImageUrl || '/images/default-profile.png'} 
+                    src={member.profileImage || '/images/default-profile.png'} 
                     alt="profile" 
                     className="rounded-circle"
                     style={{ width: '40px', height: '40px', objectFit: 'cover' }}

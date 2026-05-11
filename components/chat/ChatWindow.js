@@ -22,9 +22,9 @@ const ChatWindow = ({ room }) => {
 
   useEffect(() => {
     // 내 정보 로드 (memberId 추출)
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      setMemberId(JSON.parse(userInfo).memberId);
+    const myId = localStorage.getItem('memberId');
+    if (myId) {
+      setMemberId(Number(myId));
     }
 
     // 1. 이전 메시지 내역 로드
