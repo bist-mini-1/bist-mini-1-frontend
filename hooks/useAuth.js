@@ -19,6 +19,7 @@ const getAuthInfo = () => {
   if (!accessToken || isTokenExpired(accessToken)) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("nickname");
+    localStorage.removeItem("memberId");
 
     return {
       isLogin: false,

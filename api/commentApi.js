@@ -1,14 +1,18 @@
 import axiosInstance from "./axiosInstance";
 
 /**
- * 특정 포스트의 댓글 목록을 가져옵니다.
+ * 특정 포스트의 댓글 목록을 가져옵니다. (페이징 지원)
  * @param {number|string} postId - 게시글 ID
+ * @param {number} page - 페이지 번호
+ * @param {number} size - 페이지 크기
  * @returns {Promise<Array>} 댓글 목록 배열
  */
-export const getComments = async (postId) => {
-  const response = await axiosInstance.get(`/api/comments/post/${postId}`);
-  // API 명세상 { status, message, data: [...] } 형태로 반환됨
-  return response.data?.data || [];
+export const getComments = async (postId, page = 1, size = 10) => {
+  const response = await axiosInstance.get(`/api/comments/post/${postId}`, {
+    params: { page, size }
+  });
+  // API 명세상 { status, message, data: { comments: [...], totalCount: 15 } } 형태로 반환됨
+  return response.data?.data;
 };
 
 /**
