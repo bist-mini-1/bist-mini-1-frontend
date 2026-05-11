@@ -59,7 +59,6 @@ export default function PostForm({
 }) {
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState(() => toFormValues(initialValues));
-  const editorRef = useRef(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -203,18 +202,14 @@ export default function PostForm({
 
           <div className="col-12">
             <label className="form-label fw-semibold">내용</label>
-            <div className={`post-editor-shell ${errors.content ? "is-invalid" : ""}`}>
-              <ToastEditor
-                ref={editorRef}
-                initialValue={form.content}
-                initialEditType="markdown"
-                previewStyle="vertical"
-                height="420px"
-                usageStatistics={false}
-                hooks={{ addImageBlobHook: handleImageBlobHook }}
-                onChange={handleEditorChange}
-              />
-            </div>
+            <textarea
+              name="content"
+              className={`form-control ${errors.content ? "is-invalid" : ""}`}
+              rows={12}
+              placeholder="게시글 내용을 입력하세요"
+              value={form.content}
+              onChange={handleChange}
+            />
             {errors.content && <div className="invalid-feedback d-block">{errors.content}</div>}
           </div>
 
