@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { getChatRooms, getFollowingList, getOrCreatePersonalRoom } from '@/api/chatApi';
 
 /**
@@ -101,12 +102,13 @@ const ChatList = ({ onSelectRoom }) => {
                   className="list-group-item list-group-item-action d-flex align-items-center p-3 border-0"
                   onClick={() => onSelectRoom(room)}
                 >
-                  <div className="flex-shrink-0">
-                    <img 
+                  <div className="flex-shrink-0" style={{ width: '45px', height: '45px', position: 'relative' }}>
+                    <Image 
                       src={room.partnerProfileImage || '/images/default-profile.png'} 
                       alt="profile" 
                       className="rounded-circle"
-                      style={{ width: '45px', height: '45px', objectFit: 'cover' }}
+                      fill
+                      style={{ objectFit: 'cover' }}
                     />
                   </div>
                   <div className="ms-3 flex-grow-1 overflow-hidden">
@@ -146,12 +148,15 @@ const ChatList = ({ onSelectRoom }) => {
                   className="list-group-item list-group-item-action d-flex align-items-center p-3 border-0"
                   onClick={() => handleStartChat(member.memberId)}
                 >
-                  <img 
-                    src={member.profileImage || '/images/default-profile.png'} 
-                    alt="profile" 
-                    className="rounded-circle"
-                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                  />
+                  <div className="flex-shrink-0" style={{ width: '40px', height: '40px', position: 'relative' }}>
+                    <Image 
+                      src={member.profileImage || '/images/default-profile.png'} 
+                      alt="profile" 
+                      className="rounded-circle"
+                      fill
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </div>
                   <div className="ms-3">
                     <div className="fw-bold">{member.nickname}</div>
                     <small className="text-muted">{member.bio || '안녕하세요!'}</small>

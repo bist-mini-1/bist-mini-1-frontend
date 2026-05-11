@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getMessageHistory, markAsRead } from '@/api/chatApi';
@@ -187,8 +188,14 @@ const ChatWindow = ({ room }) => {
             return (
               <div key={msg.messageId || index} className={`d-flex ${isMine ? 'justify-content-end' : 'justify-content-start'}`}>
                 {!isMine && (
-                  <div className="me-2 mt-1">
-                    <img src="/images/default-profile.png" alt="p" className="rounded-circle" style={{ width: '30px', height: '30px' }} />
+                  <div className="me-2 mt-1" style={{ width: '30px', height: '30px', position: 'relative' }}>
+                    <Image 
+                      src="/images/default-profile.png" 
+                      alt="p" 
+                      className="rounded-circle" 
+                      fill
+                      style={{ objectFit: 'cover' }} 
+                    />
                   </div>
                 )}
                 <div style={{ maxWidth: '75%' }}>
