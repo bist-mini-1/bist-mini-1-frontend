@@ -63,8 +63,24 @@ export default function MyPageLayout({ children }) {
       setNickname(localStorage.getItem("nickname") || "");
       setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
     };
+
+    // 팔로우 상태 변경 시 숫자 다시 불러오기
+    const handleFollowChange = async () => {
+      const mid = localStorage.getItem("memberId") || getMemberIdFromToken(token);
+      if (mid) {
+        try {
+          const counts = await getFollowCount(mid);
+          if (counts) setFollowCount(counts);
+        } catch (e) { console.error(e); }
+      }
+    };
+
     window.addEventListener("authChanged", sync);
-    return () => window.removeEventListener("authChanged", sync);
+    window.addEventListener("followChanged", handleFollowChange);
+    return () => {
+      window.removeEventListener("authChanged", sync);
+      window.removeEventListener("followChanged", handleFollowChange);
+    };
   }, [router]);
 
   return (
@@ -96,25 +112,33 @@ export default function MyPageLayout({ children }) {
           </div>
 
           {/* 팔로워 / 팔로잉 숫자 — 클릭 시 목록 페이지로 이동 */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 6 }}>
-            <Link href="/Mypage/followers" style={{ textAlign: "center", textDecoration: "none", cursor: "pointer" }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.75"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            gap: 12, 
+            marginBottom: 6,
+            background: "rgba(0,0,0,0.1)",
+            padding: "10px 6px",
+            borderRadius: 14
+          }}>
+            <Link href="/Mypage/followers" style={{ flex: 1, textAlign: "center", textDecoration: "none", cursor: "pointer", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "brightness(1)"; }}
             >
-              <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>
+              <div style={{ color: "white", fontWeight: 800, fontSize: 16, lineHeight: 1 }}>
                 {followCount.followerCount}
               </div>
-              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 2 }}>팔로워</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, marginTop: 4, fontWeight: 500 }}>팔로워</div>
             </Link>
-            <div style={{ width: 1, background: "rgba(255,255,255,0.2)" }} />
-            <Link href="/Mypage/followings" style={{ textAlign: "center", textDecoration: "none", cursor: "pointer" }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.75"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            <div style={{ width: 1, background: "rgba(255,255,255,0.15)", alignSelf: "stretch" }} />
+            <Link href="/Mypage/followings" style={{ flex: 1, textAlign: "center", textDecoration: "none", cursor: "pointer", transition: "all 0.2s" }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.1)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "brightness(1)"; }}
             >
-              <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>
+              <div style={{ color: "white", fontWeight: 800, fontSize: 16, lineHeight: 1 }}>
                 {followCount.followingCount}
               </div>
-              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 2 }}>팔로잉</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, marginTop: 4, fontWeight: 500 }}>팔로잉</div>
             </Link>
           </div>
 

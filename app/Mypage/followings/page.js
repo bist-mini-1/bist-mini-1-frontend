@@ -56,6 +56,7 @@ export default function FollowingsPage() {
       await unfollowUser(confirm.memberId);
       setUsers((prev) => prev.filter((u) => u.memberId !== confirm.memberId));
       showToast(confirm.nickname + "님 팔로잉을 취소했습니다.");
+      window.dispatchEvent(new Event("followChanged"));
     } catch (e) {
       showToast("팔로잉 취소 중 오류가 발생했습니다.", true);
       console.error(e);
@@ -175,16 +176,29 @@ function UserCard({ user, onUnfollowClick }) {
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "#222" }}>{user.nickname}</div>
       </div>
-      <span
+      <button
         onClick={(e) => onUnfollowClick(e, user)}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "#ffebee"; e.currentTarget.style.color = "#c62828"; e.currentTarget.style.borderColor = "#ef9a9a"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "#e3f2fd"; e.currentTarget.style.color = "#1565c0"; e.currentTarget.style.borderColor = "#90caf9"; }}
-        style={{
-          fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20,
-          background: "#e3f2fd", color: "#1565c0", border: "1px solid #90caf9",
-          cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
+        onMouseEnter={(e) => { 
+          e.currentTarget.style.background = "#fff5f5"; 
+          e.currentTarget.style.color = "#c62828"; 
+          e.currentTarget.style.borderColor = "#ffcdd2"; 
+          e.currentTarget.textContent = "언팔로우";
         }}
-      >팔로잉</span>
+        onMouseLeave={(e) => { 
+          e.currentTarget.style.background = "#f0f9f1"; 
+          e.currentTarget.style.color = GREEN; 
+          e.currentTarget.style.borderColor = "#c8e6c9"; 
+          e.currentTarget.textContent = "팔로잉";
+        }}
+        style={{
+          fontSize: 11, fontWeight: 700, padding: "5px 14px", borderRadius: 20,
+          background: "#f0f9f1", color: GREEN, border: "1.5px solid #c8e6c9",
+          cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)", 
+          flexShrink: 0,
+        }}
+      >
+        팔로잉
+      </button>
     </div>
   );
 }

@@ -346,7 +346,7 @@ function PostDetailPage() {
       </section>
 
       {post?.postId && (
-        <CommentSection postId={post.postId} />
+        <CommentSection postId={post.postId} postAuthorId={post.memberId} />
       )}
 
       {showDeleteConfirm ? (

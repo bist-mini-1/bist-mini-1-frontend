@@ -68,6 +68,7 @@ export default function FollowersPage() {
       await followUser(user.memberId);
       setMyFollowings((prev) => new Set([...prev, String(user.memberId)]));
       showToast(user.nickname + "님을 팔로우했습니다.");
+      window.dispatchEvent(new Event("followChanged"));
     } catch (err) {
       showToast("팔로우 중 오류가 발생했습니다.", true);
       console.error(err);
@@ -161,27 +162,37 @@ function UserCard({ user, isFollowingBack, onMutualFollow }) {
 
       {isFollowingBack ? (
         <span style={{
-          fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20,
-          background: "#e8f5e9", color: GREEN_DARK, border: "1px solid #a5d6a7",
-          flexShrink: 0,
+          fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 20,
+          background: "#f0f9f1", color: GREEN, border: "1px solid #c8e6c9",
+          flexShrink: 0, display: "flex", alignItems: "center", gap: 4
         }}>
-          팔로워
+          <i className="bi bi-check-circle-fill" style={{ fontSize: 10 }} />
+          맞팔로우 중
         </span>
       ) : (
-        <span
+        <button
           onClick={(e) => onMutualFollow(e, user)}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#1976d2"; e.currentTarget.style.transform = "scale(1.04)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#1e88e5"; e.currentTarget.style.transform = "scale(1)"; }}
+          onMouseEnter={(e) => { 
+            e.currentTarget.style.background = GREEN_DARK; 
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.boxShadow = "0 4px 12px rgba(60,184,120,0.3)";
+          }}
+          onMouseLeave={(e) => { 
+            e.currentTarget.style.background = GREEN; 
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 2px 6px rgba(60,184,120,0.15)";
+          }}
           style={{
-            fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 20,
-            background: "#1e88e5", color: "white", border: "none",
-            cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
-            display: "flex", alignItems: "center", gap: 4,
+            fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 20,
+            background: GREEN, color: "white", border: "none",
+            cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)", 
+            flexShrink: 0, display: "flex", alignItems: "center", gap: 4,
+            boxShadow: "0 2px 6px rgba(60,184,120,0.15)",
           }}
         >
-          <i className="bi bi-person-plus-fill" style={{ fontSize: 11 }} />
+          <i className="bi bi-person-plus-fill" style={{ fontSize: 12 }} />
           맞팔로우
-        </span>
+        </button>
       )}
     </div>
   );

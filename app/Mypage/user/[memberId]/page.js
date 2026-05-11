@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { getUserProfile, getUserPosts, getFollowCount } from "../../../../api/mypageApi";
+import { getUserProfile, getUserPosts, getFollowCount, getMyFollowings, followUser, unfollowUser, checkIsMe } from "../../../../api/mypageApi";
 
 const GREEN      = "#3cb878";
 const GREEN_DARK = "#2e7d32";
@@ -15,8 +15,11 @@ export default function UserProfilePage() {
   const [profile,     setProfile]     = useState(null);
   const [posts,       setPosts]       = useState([]);
   const [followCount, setFollowCount] = useState({ followerCount: 0, followingCount: 0 });
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isMe,        setIsMe]        = useState(false);
   const [loading,     setLoading]     = useState(true);
   const [error,       setError]       = useState(null);
+  const [followingAction, setFollowingAction] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -25,14 +28,23 @@ export default function UserProfilePage() {
 
     const load = async () => {
       try {
-        const [prof, postList, counts] = await Promise.all([
+        const [prof, postList, counts, meRes, myFollowings] = await Promise.all([
           getUserProfile(memberId),
           getUserPosts(memberId),
           getFollowCount(memberId),
+          checkIsMe(memberId),
+          getMyFollowings()
         ]);
+        
         setProfile(prof);
         setPosts(postList);
         if (counts) setFollowCount(counts);
+        setIsMe(meRes);
+        
+        if (myFollowings) {
+          const isF = (myFollowings.users ?? []).some(u => String(u.memberId) === String(memberId));
+          setIsFollowing(isF);
+        }
       } catch (e) {
         console.error(e);
         setError("유저 정보를 불러오는 중 오류가 발생했습니다.");
@@ -42,6 +54,29 @@ export default function UserProfilePage() {
     };
     load();
   }, [memberId, router]);
+
+  const handleFollowToggle = async () => {
+    if (followingAction) return;
+    try {
+      setFollowingAction(true);
+      if (isFollowing) {
+        await unfollowUser(memberId);
+        setIsFollowing(false);
+        setFollowCount(prev => ({ ...prev, followerCount: Math.max(0, prev.followerCount - 1) }));
+        window.dispatchEvent(new Event("followChanged"));
+      } else {
+        await followUser(memberId);
+        setIsFollowing(true);
+        setFollowCount(prev => ({ ...prev, followerCount: prev.followerCount + 1 }));
+        window.dispatchEvent(new Event("followChanged"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("요청 중 오류가 발생했습니다.");
+    } finally {
+      setFollowingAction(false);
+    }
+  };
 
   if (loading) return <SkeletonPage />;
   if (error)   return <ErrorState message={error} />;
@@ -103,6 +138,46 @@ export default function UserProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* 팔로우 버튼 (내 프로필이 아닐 때만) */}
+        {!isMe && (
+          <button
+            onClick={handleFollowToggle}
+            disabled={followingAction}
+            onMouseEnter={(e) => {
+              if (isFollowing) {
+                e.currentTarget.style.background = "#fff5f5";
+                e.currentTarget.style.color = "#c62828";
+                e.currentTarget.style.borderColor = "#ffcdd2";
+                e.currentTarget.textContent = "언팔로우";
+              } else {
+                e.currentTarget.style.background = GREEN_DARK;
+                e.currentTarget.style.boxShadow = "0 4px 12px rgba(60,184,120,0.3)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (isFollowing) {
+                e.currentTarget.style.background = "#f0f9f1";
+                e.currentTarget.style.color = GREEN;
+                e.currentTarget.style.borderColor = "#c8e6c9";
+                e.currentTarget.textContent = "팔로잉";
+              } else {
+                e.currentTarget.style.background = GREEN;
+                e.currentTarget.style.boxShadow = "none";
+              }
+            }}
+            style={{
+              padding: "10px 24px", borderRadius: 12, fontSize: 14, fontWeight: 700,
+              cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+              border: isFollowing ? "1.5px solid #c8e6c9" : "none",
+              background: isFollowing ? "#f0f9f1" : GREEN,
+              color: isFollowing ? GREEN : "white",
+              minWidth: 100,
+            }}
+          >
+            {isFollowing ? "팔로잉" : "팔로우"}
+          </button>
+        )}
       </div>
 
       {/* 게시글 목록 */}

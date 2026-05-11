@@ -61,3 +61,13 @@ export const checkIsMyComment = async (commentId) => {
     return false;
   }
 };
+
+/**
+ * 댓글 좋아요를 토글합니다.
+ * @param {number} commentId - 댓글 ID
+ * @returns {Promise<boolean>} 좋아요 상태 (true: 추가됨, false: 취소됨)
+ */
+export const toggleCommentLike = async (commentId) => {
+  const response = await axiosInstance.post(`/api/comments/${commentId}/like`);
+  return response.data?.data;
+};

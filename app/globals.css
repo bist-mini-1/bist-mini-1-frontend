@@ -780,7 +780,7 @@ a {
 .slog-interest-tags {
   max-height: 112px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 6px 4px 6px 2px; /* 상하 패딩 추가 */
 }
 
 .slog-interest-tags::-webkit-scrollbar {
