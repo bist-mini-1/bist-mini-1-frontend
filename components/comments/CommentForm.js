@@ -80,15 +80,29 @@ function CommentForm({
   return (
     <div style={formContainerStyle}>
       <form onSubmit={handleSubmit}>
-        <textarea
-          ref={textareaRef}
-          style={textareaStyle}
-          placeholder={placeholder}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onFocus={(e) => (e.target.style.borderColor = "var(--slog-green)")}
-          onBlur={(e) => (e.target.style.borderColor = "#e1e1e1")}
-        />
+        <div style={{ position: "relative" }}>
+          <textarea
+            ref={textareaRef}
+            style={textareaStyle}
+            placeholder={placeholder}
+            value={content}
+            maxLength={500}
+            onChange={(e) => setContent(e.target.value)}
+            onFocus={(e) => (e.target.style.borderColor = "var(--slog-green)")}
+            onBlur={(e) => (e.target.style.borderColor = "#e1e1e1")}
+          />
+          <div style={{ 
+            position: "absolute", 
+            bottom: "22px", 
+            right: "12px", 
+            fontSize: "12px", 
+            color: content.length >= 500 ? "#ff4d4f" : "#999",
+            fontWeight: "600",
+            pointerEvents: "none"
+          }}>
+            {content.length} / 500
+          </div>
+        </div>
         <div style={buttonContainerStyle}>
           {onCancel && (
             <button type="button" style={cancelButtonStyle} onClick={onCancel}>
@@ -98,10 +112,11 @@ function CommentForm({
           <button 
             type="submit" 
             style={submitButtonStyle}
-            onMouseOver={(e) => (e.target.style.backgroundColor = "var(--slog-green-dark)")}
-            onMouseOut={(e) => (e.target.style.backgroundColor = "var(--slog-green)")}
-            onMouseDown={(e) => (e.target.style.transform = "scale(0.98)")}
-            onMouseUp={(e) => (e.target.style.transform = "scale(1)")}
+            disabled={!content.trim()}
+            onMouseOver={(e) => !e.target.disabled && (e.target.style.backgroundColor = "var(--slog-green-dark)")}
+            onMouseOut={(e) => !e.target.disabled && (e.target.style.backgroundColor = "var(--slog-green)")}
+            onMouseDown={(e) => !e.target.disabled && (e.target.style.transform = "scale(0.98)")}
+            onMouseUp={(e) => !e.target.disabled && (e.target.style.transform = "scale(1)")}
           >
             {buttonText}
           </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import CommentForm from "./CommentForm";
 import { updateComment, deleteComment, createComment, checkIsMyComment, toggleCommentLike } from "@/api/commentApi";
 import useAuth from "@/hooks/useAuth";
@@ -11,7 +12,6 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showReplies, setShowReplies] = useState(true); 
-  const [isAuthor, setIsAuthor] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
   // 좋아요 로컬 상태
@@ -41,28 +41,6 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
       setLiking(false);
     }
   };
-
-  // 서버로부터 본인 여부 확인
-  useEffect(() => {
-    const checkOwnership = async () => {
-      if (!authInfo.isLogin || !comment.commentId) {
-        setIsAuthor(false);
-        return;
-      }
-
-      // 1. 로컬 기반 1차 판정 (빠른 반응성을 위해)
-      const displayName = (comment.nickname || `User ${comment.memberId}`).trim();
-      const currentNickname = (authInfo.nickname || "").trim();
-      const localMatch = currentNickname.toLowerCase() === displayName.toLowerCase() || comment.isMine;
-      setIsAuthor(localMatch);
-
-      // 2. 서버 기반 최종 판정
-      const serverResult = await checkIsMyComment(comment.commentId);
-      setIsAuthor(serverResult);
-    };
-
-    checkOwnership();
-  }, [authInfo.isLogin, authInfo.nickname, comment.commentId, comment.nickname, comment.memberId, comment.isMine]);
 
   // 댓글 데이터가 바뀌면(onRefresh 후 등) 좋아요 상태 업데이트
   useEffect(() => {
@@ -218,22 +196,22 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
   return (
     <div style={itemStyle} className={`comment-item-wrapper ${isNew ? "comment-item-new" : ""}`}>
       <div style={headerStyle}>
-        <div style={avatarStyle}>
-          {comment.profileImageUrl ? (
+        <Link href={`/Mypage/user/${comment.memberId}`} className="text-decoration-none">
+          <div style={avatarStyle}>
             <Image 
-              src={comment.profileImageUrl} 
+              src={comment.profileImageUrl || "/images/default-profile.png"} 
               alt={comment.nickname || "User"} 
               width={isReply ? 32 : 40} 
               height={isReply ? 32 : 40} 
               style={{ objectFit: "cover" }} 
             />
-          ) : (
-            <i className="bi bi-person-circle" style={{ color: "#ddd", fontSize: isReply ? "1.2rem" : "1.5rem" }}></i>
-          )}
-        </div>
+          </div>
+        </Link>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={authorStyle}>
-            {comment.nickname || `User ${comment.memberId}`}
+            <Link href={`/Mypage/user/${comment.memberId}`} className="text-decoration-none text-dark hover-underline">
+              {comment.nickname || `User ${comment.memberId}`}
+            </Link>
             {isPostAuthor && (
               <span className="badge rounded-pill text-bg-success" style={{ fontSize: "10px", padding: "3px 8px", fontWeight: "600" }}>
                 작성자
@@ -247,7 +225,8 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
         </div>
         
         {/* 수정/삭제 드롭다운 메뉴 */}
-        {isAuthor && comment.isDeleted !== "Y" && !showEditForm && (
+        {/* 수정/삭제 드롭다운 메뉴 (서버에서 부여한 권한 기반) */}
+        {(comment.canDelete || comment.isMine) && comment.isDeleted !== "Y" && !showEditForm && (
           <div style={{ marginLeft: "auto", position: "relative" }}>
             <button 
               style={meatballStyle} 
@@ -262,9 +241,11 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
             
             {showDropdown && (
               <div className="comment-dropdown">
-                <div className="comment-dropdown-item" onClick={() => setShowEditForm(true)}>
-                  <i className="bi bi-pencil-square"></i> 수정하기
-                </div>
+                {comment.isMine && (
+                  <div className="comment-dropdown-item" onClick={() => setShowEditForm(true)}>
+                    <i className="bi bi-pencil-square"></i> 수정하기
+                  </div>
+                )}
                 <div className="comment-dropdown-item delete" onClick={handleDelete}>
                   <i className="bi bi-trash"></i> 삭제하기
                 </div>
