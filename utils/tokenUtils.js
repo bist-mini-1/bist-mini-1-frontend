@@ -1,3 +1,15 @@
+export const getMemberIdFromToken = (token) => {
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(
+      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))
+    );
+    return payload.sub ? String(payload.sub) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const isTokenExpired = (token) => {
   if (!token) {
     return true;
