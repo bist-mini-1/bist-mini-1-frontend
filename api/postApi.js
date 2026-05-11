@@ -1,11 +1,17 @@
 import axiosInstance from "./axiosInstance";
 
-export const getPostList = async ({ page = 1, size = 12, keyword = "" }) => {
+export const getPostList = async ({
+  page = 1,
+  size = 12,
+  keyword = "",
+  sort = "latest",
+}) => {
   const response = await axiosInstance.get("/api/posts", {
     params: {
       page,
       size,
       keyword,
+      sort,
     },
   });
 

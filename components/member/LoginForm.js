@@ -56,48 +56,53 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="card mx-auto" style={{ maxWidth: "420px" }}>
-      <div className="card-header fw-bold">로그인</div>
+    <div className="slog-auth-card slog-login-card mx-auto">
+      <div className="slog-auth-header">
+        <h2 className="slog-auth-title">로그인</h2>
+        <p className="slog-auth-subtitle">
+          SLog에 로그인하고 나의 기록을 이어가보세요.
+        </p>
+      </div>
 
-      <div className="card-body">
+      <div className="slog-auth-body">
         {errorMessage && (
-          <div className="alert alert-danger py-2" role="alert">
+          <div className="alert alert-danger py-2 small" role="alert">
             {errorMessage}
           </div>
         )}
 
         <form onSubmit={handleLogin}>
           <div className="mb-3">
-            <label className="form-label">아이디</label>
+            <label className="form-label slog-form-label">아이디</label>
             <input
               type="text"
               name="loginId"
-              className="form-control"
+              className="form-control slog-form-control"
               value={loginForm.loginId}
               onChange={handleChange}
               placeholder="아이디를 입력하세요"
             />
           </div>
 
-          <div className="mb-3">
-            <label className="form-label">비밀번호</label>
+          <div className="mb-4">
+            <label className="form-label slog-form-label">비밀번호</label>
             <input
               type="password"
               name="password"
-              className="form-control"
+              className="form-control slog-form-control"
               value={loginForm.password}
               onChange={handleChange}
               placeholder="비밀번호를 입력하세요"
             />
           </div>
 
-          <button type="submit" className="btn btn-dark w-100">
+          <button type="submit" className="btn slog-btn-submit w-100">
             로그인
           </button>
 
-          <div className="text-center mt-3">
+          <div className="text-center mt-4">
             <span className="text-muted small">아직 회원이 아니신가요? </span>
-            <Link href="/join" className="small">
+            <Link href="/join" className="slog-auth-link small">
               회원가입
             </Link>
           </div>

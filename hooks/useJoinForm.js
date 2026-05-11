@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   checkLoginId,
   checkEmail,
   checkNickname,
   join,
+  getTagList,
 } from "../api/memberApi";
 import {
   validateLoginId,
@@ -25,7 +26,10 @@ export default function useJoinForm() {
     email: "",
     nickname: "",
     bio: "",
+    interestTagIds: [],
   });
+
+  const [tags, setTags] = useState([]);
 
   const [duplicateChecked, setDuplicateChecked] = useState({
     loginId: false,
@@ -35,6 +39,20 @@ export default function useJoinForm() {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const data = await getTagList();
+        setTags(data || []);
+      } catch (error) {
+        console.log(error);
+        setTags([]);
+      }
+    };
+
+    fetchTags();
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -50,6 +68,22 @@ export default function useJoinForm() {
         [name]: false,
       }));
     }
+
+    setErrorMessage("");
+    setSuccessMessage("");
+  };
+
+  const handleToggleInterestTag = (tagId) => {
+    setJoinForm((prevJoinForm) => {
+      const isSelected = prevJoinForm.interestTagIds.includes(tagId);
+
+      return {
+        ...prevJoinForm,
+        interestTagIds: isSelected
+          ? prevJoinForm.interestTagIds.filter((id) => id !== tagId)
+          : [...prevJoinForm.interestTagIds, tagId],
+      };
+    });
 
     setErrorMessage("");
     setSuccessMessage("");
@@ -237,10 +271,12 @@ export default function useJoinForm() {
 
   return {
     joinForm,
+    tags,
     errorMessage,
     successMessage,
     duplicateChecked,
     handleChange,
+    handleToggleInterestTag,
     handleCheckLoginId,
     handleCheckEmail,
     handleCheckNickname,
