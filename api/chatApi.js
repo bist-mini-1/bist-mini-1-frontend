@@ -36,8 +36,8 @@ export const markAsRead = async (roomId) => {
   return res.data;
 };
 
-// 팔로잉 목록 조회 (다른 브랜치에서 구현됨을 가정)
-export const getFollowingList = async () => {
-  const res = await axiosInstance.get("/api/follows/followings");
-  return res.data.data ?? [];
+// 팔로잉 목록 조회
+export const getFollowingList = async (memberId) => {
+  const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
+  return res.data.data; // FollowListResponse { count, users }
 };
