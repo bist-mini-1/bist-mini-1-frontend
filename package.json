@@ -12,6 +12,8 @@
     "axios": "^1.16.0",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.13.1",
+    "@stomp/stompjs": "^7.0.0",
+    "sockjs-client": "^1.6.1",
     "event-source-polyfill": "^1.0.31",
     "next": "16.2.4",
     "react": "19.2.4",

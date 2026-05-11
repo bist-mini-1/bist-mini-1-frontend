@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import BootstrapClient from "../components/layout/BootstrapClient";
 import AppHeader from "../components/layout/AppHeader";
+import ChatWidget from "../components/chat/ChatWidget";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,6 +37,8 @@ export default function RootLayout({ children }) {
               {children}
             </div>
           </main>
+
+          <ChatWidget />
         </div>
       </body>
     </html>
