@@ -94,6 +94,15 @@ export const getUserPosts = async (memberId) => {
 };
 
 /**
+ * 팔로우 하기
+ * @param {number} followingId - 팔로우할 상대방 memberId
+ */
+export const followUser = async (followingId) => {
+  const res = await axiosInstance.post(`/api/follows/${followingId}`);
+  return res.data;
+};
+
+/**
  * 팔로워/팔로잉 수 조회 → { followerCount, followingCount }
  * @param {number} memberId
  */

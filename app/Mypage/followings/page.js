@@ -14,8 +14,8 @@ export default function FollowingsPage() {
   const [users,   setUsers]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);
-  const [confirm, setConfirm] = useState(null); // { memberId, nickname }
-  const [toast,   setToast]   = useState(null); // 완료 메시지
+  const [confirm, setConfirm] = useState(null);
+  const [toast,   setToast]   = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -46,7 +46,7 @@ export default function FollowingsPage() {
   }, [router]);
 
   const handleUnfollowClick = (e, user) => {
-    e.stopPropagation(); // 카드 클릭(프로필 이동) 방지
+    e.stopPropagation();
     setConfirm(user);
   };
 
@@ -55,7 +55,7 @@ export default function FollowingsPage() {
     try {
       await unfollowUser(confirm.memberId);
       setUsers((prev) => prev.filter((u) => u.memberId !== confirm.memberId));
-      showToast(`${confirm.nickname}님 팔로잉을 취소했습니다.`);
+      showToast(confirm.nickname + "님 팔로잉을 취소했습니다.");
     } catch (e) {
       showToast("팔로잉 취소 중 오류가 발생했습니다.", true);
       console.error(e);
@@ -71,7 +71,6 @@ export default function FollowingsPage() {
 
   return (
     <div>
-      {/* 토스트 메시지 */}
       {toast && (
         <div style={{
           position: "fixed", top: 24, left: "50%", transform: "translateX(-50%)",
@@ -79,27 +78,20 @@ export default function FollowingsPage() {
           color: "white", padding: "12px 24px", borderRadius: 10,
           fontSize: 13, fontWeight: 600, zIndex: 9999,
           boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
-          animation: "fadeIn 0.2s ease",
         }}>
           {toast.isError ? "⚠️ " : "✓ "}{toast.msg}
         </div>
       )}
 
-      {/* 확인 다이얼로그 */}
       {confirm && (
-        <div style={{
+        <div onClick={() => setConfirm(null)} style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 9998,
-        }}
-          onClick={() => setConfirm(null)}
-        >
-          <div style={{
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998,
+        }}>
+          <div onClick={(e) => e.stopPropagation()} style={{
             background: "white", borderRadius: 16, padding: "28px 32px",
             boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: 300, textAlign: "center",
-          }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          }}>
             <i className="bi bi-person-dash-fill" style={{ fontSize: 32, color: "#e57373", display: "block", marginBottom: 12 }} />
             <p style={{ fontSize: 15, fontWeight: 700, color: "#222", margin: "0 0 6px" }}>
               팔로잉을 정말 취소하겠습니까?
@@ -109,25 +101,21 @@ export default function FollowingsPage() {
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setConfirm(null)} style={{
-                flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #e9ecef",
-                background: "white", color: "#666", fontSize: 13, fontWeight: 600, cursor: "pointer",
-              }}>
-                취소
-              </button>
+                flex: 1, padding: "10px 0", borderRadius: 10,
+                border: "1.5px solid #e9ecef", background: "white",
+                color: "#666", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}>취소</button>
               <button onClick={handleUnfollowConfirm} style={{
                 flex: 1, padding: "10px 0", borderRadius: 10, border: "none",
                 background: "#e57373", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer",
-              }}>
-                언팔로우
-              </button>
+              }}>언팔로우</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 헤더 */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        <div style={{ marginBottom: 6 }}>
           <button onClick={() => router.push("/Mypage/character")} style={{
             background: "none", border: "none", cursor: "pointer",
             color: "#666", fontSize: 13, padding: 0, display: "flex", alignItems: "center", gap: 4,
@@ -142,24 +130,17 @@ export default function FollowingsPage() {
         <p style={{ fontSize: 13, color: "#888", margin: "6px 0 0" }}>내가 팔로우하는 사람들이에요</p>
       </div>
 
-      {loading ? (
-        <SkeletonList />
-      ) : error ? (
-        <ErrorState message={error} />
-      ) : users.length === 0 ? (
-        <EmptyState text="아직 팔로우한 사람이 없어요" sub="관심 있는 사람을 팔로우해 보세요!" />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {users.map((user) => (
-            <UserCard
-              key={user.memberId}
-              user={user}
-              onUnfollowClick={handleUnfollowClick}
-            />
-          ))}
-        </div>
-      )}
-      <style>{`@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
+      {loading ? <SkeletonList />
+        : error ? <ErrorState message={error} />
+        : users.length === 0 ? <EmptyState text="아직 팔로우한 사람이 없어요" sub="관심 있는 사람을 팔로우해 보세요!" />
+        : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {users.map((user) => (
+              <UserCard key={user.memberId} user={user} onUnfollowClick={handleUnfollowClick} />
+            ))}
+          </div>
+        )
+      }
     </div>
   );
 }
@@ -167,44 +148,43 @@ export default function FollowingsPage() {
 function UserCard({ user, onUnfollowClick }) {
   const router = useRouter();
   return (
-    <div style={{
-      display: "flex", alignItems: "center", gap: 14,
-      background: "white", borderRadius: 14,
-      border: "1.5px solid #e9ecef",
-      padding: "14px 18px",
-      boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-      transition: "all 0.15s",
-      cursor: "pointer",
-    }}
-      onClick={() => router.push(`/Mypage/user/${user.memberId}`)}
+    <div
+      onClick={() => router.push("/Mypage/user/" + user.memberId)}
       onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#a5d6a7"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(46,125,50,0.1)"; }}
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e9ecef"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; }}
+      style={{
+        display: "flex", alignItems: "center", gap: 14,
+        background: "white", borderRadius: 14, border: "1.5px solid #e9ecef",
+        padding: "14px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        transition: "all 0.15s", cursor: "pointer",
+      }}
     >
       {user.profileImage ? (
         <Image src={user.profileImage} alt={user.nickname} width={46} height={46} unoptimized
           style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #a5d6a7", flexShrink: 0 }} />
       ) : (
-        <div style={{ width: 46, height: 46, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg, #c8e6c9, #a5d6a7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "white", border: "2px solid #a5d6a7" }}>
+        <div style={{
+          width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
+          background: "linear-gradient(135deg, #c8e6c9, #a5d6a7)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 18, fontWeight: 800, color: "white", border: "2px solid #a5d6a7",
+        }}>
           {user.nickname?.charAt(0).toUpperCase() ?? "U"}
         </div>
       )}
-
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "#222" }}>{user.nickname}</div>
       </div>
-
       <span
         onClick={(e) => onUnfollowClick(e, user)}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#ffebee"; e.currentTarget.style.color = "#c62828"; e.currentTarget.style.borderColor = "#ef9a9a"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "#e3f2fd"; e.currentTarget.style.color = "#1565c0"; e.currentTarget.style.borderColor = "#90caf9"; }}
         style={{
           fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20,
           background: "#e3f2fd", color: "#1565c0", border: "1px solid #90caf9",
           cursor: "pointer", transition: "all 0.15s", flexShrink: 0,
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "#ffebee"; e.currentTarget.style.color = "#c62828"; e.currentTarget.style.borderColor = "#ef9a9a"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.background = "#e3f2fd"; e.currentTarget.style.color = "#1565c0"; e.currentTarget.style.borderColor = "#90caf9"; }}
-      >
-        팔로잉
-      </span>
+      >팔로잉</span>
     </div>
   );
 }
@@ -215,9 +195,7 @@ function SkeletonList() {
       {[1, 2, 3].map((i) => (
         <div key={i} style={{ background: "white", borderRadius: 14, border: "1.5px solid #e9ecef", padding: "14px 18px", display: "flex", alignItems: "center", gap: 14, animation: "pulse 1.5s ease-in-out infinite" }}>
           <div style={{ width: 46, height: 46, borderRadius: "50%", background: "#f0f0f0", flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ height: 14, background: "#f0f0f0", borderRadius: 6, width: "30%", marginBottom: 6 }} />
-          </div>
+          <div style={{ flex: 1 }}><div style={{ height: 14, background: "#f0f0f0", borderRadius: 6, width: "30%" }} /></div>
         </div>
       ))}
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
