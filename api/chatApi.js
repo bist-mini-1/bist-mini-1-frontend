@@ -36,6 +36,18 @@ export const markAsRead = async (roomId) => {
   return res.data;
 };
 
+// 메시지 수정
+export const updateMessage = async (messageId, content) => {
+  const res = await axiosInstance.put(`/api/chat/messages/${messageId}`, { content });
+  return res.data.data;
+};
+
+// 메시지 삭제
+export const deleteMessage = async (messageId) => {
+  const res = await axiosInstance.delete(`/api/chat/messages/${messageId}`);
+  return res.data;
+};
+
 // 팔로잉 목록 조회
 export const getFollowingList = async (memberId) => {
   const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
