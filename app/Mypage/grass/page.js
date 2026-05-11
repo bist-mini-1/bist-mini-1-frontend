@@ -50,6 +50,13 @@ function calcStreak(postDates) {
 
 const MONTHS = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
 
+function motivationIcon(streak) {
+  if (streak >= 30) return { icon: "bi-trophy-fill",          color: "#f9a825" };
+  if (streak >= 7)  return { icon: "bi-fire",                 color: "#e64a19" };
+  if (streak >= 1)  return { icon: "bi-lightning-charge-fill",color: "#1565c0" };
+  return                   { icon: "bi-flower1",              color: GREEN };
+}
+
 export default function GrassPage() {
   const [postDates, setPostDates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,10 +92,21 @@ export default function GrassPage() {
     else setViewMonth(m => m + 1);
   };
 
+  const { icon: motIcon, color: motColor } = motivationIcon(streak);
+
+  const SUMMARY = [
+    { icon: "bi-fire",               iconColor: streak > 0 ? "#e64a19" : "#888", label: "현재 연속 기록", value: loading ? "…" : `${streak}일`,        color: streak > 0 ? "#e65100" : "#888" },
+    { icon: "bi-trophy-fill",        iconColor: "#f9a825",                        label: "최고 기록",      value: loading ? "…" : `${maxStreak}일`,      color: "#f9a825" },
+    { icon: "bi-calendar2-check-fill", iconColor: GREEN_DARK,                     label: "이번 달 기록",   value: loading ? "…" : `${postsThisMonth}일`, color: GREEN_DARK },
+  ];
+
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#222", margin: 0 }}>🔥 잔디</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#222", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          <i className="bi bi-calendar2-check-fill" style={{ color: GREEN }} />
+          잔디
+        </h2>
         <p style={{ fontSize: 13, color: "#888", margin: "6px 0 0" }}>매일의 공부가 모여 잔디밭이 완성돼요</p>
       </div>
 
@@ -96,13 +114,9 @@ export default function GrassPage() {
 
         {/* 연속 기록 요약 */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-          {[
-            { label: "현재 연속 기록", value: loading ? "…" : `${streak}일`, icon: "🔥", color: streak > 0 ? "#e65100" : "#888" },
-            { label: "최고 기록",      value: loading ? "…" : `${maxStreak}일`, icon: "🏆", color: "#f9a825" },
-            { label: "이번 달 기록",   value: loading ? "…" : `${postsThisMonth}일`, icon: "📅", color: GREEN_DARK },
-          ].map(({ label, value, icon, color }) => (
+          {SUMMARY.map(({ icon, iconColor, label, value, color }) => (
             <div key={label} style={{ background: "white", borderRadius: 14, border: "1.5px solid #e9ecef", padding: "18px 16px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-              <div style={{ fontSize: 26, marginBottom: 8 }}>{icon}</div>
+              <i className={`bi ${icon}`} style={{ fontSize: 26, color: iconColor, display: "block", marginBottom: 8 }} />
               <div style={{ fontSize: 24, fontWeight: 800, color, marginBottom: 4 }}>{value}</div>
               <div style={{ fontSize: 11, color: "#888" }}>{label}</div>
             </div>
@@ -117,9 +131,11 @@ export default function GrassPage() {
             <span style={{ fontWeight: 700, fontSize: 16, color: "#222" }}>
               {viewYear}년 {MONTHS[viewMonth]}
             </span>
-            <button onClick={nextMonth}
+            <button
+              onClick={nextMonth}
               disabled={viewYear === now.getFullYear() && viewMonth === now.getMonth()}
-              style={{ border: "1px solid #e0e0e0", background: "white", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 14, color: "#555", opacity: (viewYear === now.getFullYear() && viewMonth === now.getMonth()) ? 0.3 : 1 }}>›</button>
+              style={{ border: "1px solid #e0e0e0", background: "white", borderRadius: 8, width: 32, height: 32, cursor: "pointer", fontSize: 14, color: "#555", opacity: (viewYear === now.getFullYear() && viewMonth === now.getMonth()) ? 0.3 : 1 }}
+            >›</button>
           </div>
 
           {/* 요일 */}
@@ -144,7 +160,6 @@ export default function GrassPage() {
                   fontWeight: isToday ? 700 : 400,
                   outline: isToday ? `2px solid ${GREEN_DARK}` : "none",
                   outlineOffset: 1,
-                  position: "relative",
                 }}>
                   {cell?.day}
                 </div>
@@ -167,16 +182,14 @@ export default function GrassPage() {
 
         {/* 동기부여 메시지 */}
         <div style={{ background: "linear-gradient(135deg, #e8f5e9, #f1f8e9)", borderRadius: 14, border: "1.5px solid #c8e6c9", padding: "18px 24px", textAlign: "center" }}>
-          <div style={{ fontSize: 24, marginBottom: 8 }}>
-            {streak >= 30 ? "🏆" : streak >= 7 ? "🔥" : streak >= 1 ? "💪" : "🌱"}
-          </div>
+          <i className={`bi ${motIcon}`} style={{ fontSize: 28, color: motColor, display: "block", marginBottom: 8 }} />
           <div style={{ fontWeight: 700, color: GREEN_DARK, marginBottom: 4, fontSize: 14 }}>
             {streak >= 30 ? `${streak}일 연속! 정말 대단해요!` :
              streak >= 7  ? `${streak}일 연속! 꾸준함이 빛나고 있어요!` :
              streak >= 1  ? `${streak}일 연속! 좋은 출발이에요!` :
              "오늘 첫 기록을 남겨 연속 기록을 시작해요!"}
           </div>
-          <div style={{ fontSize: 12, color: "#888" }}>꾸준함이 실력을 만듭니다 🌿</div>
+          <div style={{ fontSize: 12, color: "#888" }}>꾸준함이 실력을 만듭니다</div>
         </div>
       </div>
     </div>

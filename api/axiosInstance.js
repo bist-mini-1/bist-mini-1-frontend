@@ -1,7 +1,24 @@
 import axios from "axios";
 
+const getBaseURL = () => {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+  
+  // 브라우저 환경일 때만 현재 호스트 주소를 사용 (192.168.x.x 등 외부 접속 대응)
+  if (typeof window !== "undefined" && window.location) {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `http://${hostname}:8080`;
+    }
+  }
+  
+  // 기본값 (로컬 개발 시)
+  return "http://127.0.0.1:8080";
+};
+
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080",
+  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

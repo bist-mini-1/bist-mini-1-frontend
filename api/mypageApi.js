@@ -59,3 +59,63 @@ export const checkNicknameDuplicate = async (nickname) => {
   });
   return res.data === true; // boolean 반환
 };
+
+/** 북마크한 게시글 목록 조회 → MyPostResponse[] */
+export const getBookmarkedPosts = async () => {
+  const res = await axiosInstance.get("/api/members/me/bookmarks");
+  return res.data.data ?? [];
+};
+
+/**
+ * 팔로우 취소
+ * @param {number} followingId - 언팔할 상대방 memberId
+ */
+export const unfollowUser = async (followingId) => {
+  const res = await axiosInstance.delete(`/api/follows/${followingId}`);
+  return res.data;
+};
+
+/**
+ * 특정 유저 공개 프로필 조회 → { memberId, nickname, bio, profileImageUrl }
+ * @param {number} memberId
+ */
+export const getUserProfile = async (memberId) => {
+  const res = await axiosInstance.get(`/api/members/${memberId}/profile`);
+  return res.data.data;
+};
+
+/**
+ * 특정 유저 공개 게시글 목록 조회 → MyPostResponse[]
+ * @param {number} memberId
+ */
+export const getUserPosts = async (memberId) => {
+  const res = await axiosInstance.get(`/api/members/${memberId}/posts`);
+  return res.data.data ?? [];
+};
+
+/**
+ * 팔로워/팔로잉 수 조회 → { followerCount, followingCount }
+ * @param {number} memberId
+ */
+export const getFollowCount = async (memberId) => {
+  const res = await axiosInstance.get(`/api/follows/${memberId}/count`);
+  return res.data.data; // { followerCount, followingCount }
+};
+
+/**
+ * 팔로워 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
+ * @param {number} memberId
+ */
+export const getFollowers = async (memberId) => {
+  const res = await axiosInstance.get(`/api/follows/${memberId}/followers`);
+  return res.data.data ?? { count: 0, users: [] };
+};
+
+/**
+ * 팔로잉 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
+ * @param {number} memberId
+ */
+export const getFollowings = async (memberId) => {
+  const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
+  return res.data.data ?? { count: 0, users: [] };
+};
