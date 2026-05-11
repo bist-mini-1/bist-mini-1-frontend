@@ -1,16 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import useAuth from "../../hooks/useAuth";
-import { getNotifications, markAsRead, markAllAsRead } from "../../api/notificationApi";
+import { getNotifications, markAsRead, markAllAsRead, deleteAllNotifications } from "../../api/notificationApi";
+import { followUser } from "../../api/followApi";
 import Link from "next/link";
 
 export default function NotificationBell() {
   const { authInfo } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+   const [isOpen, setIsOpen] = useState(false);
+  const bellRef = useRef(null);
+
+  // 바깥 영역 클릭 시 닫기
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (bellRef.current && !bellRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
 
   // 초기 알림 목록 조회
   useEffect(() => {
@@ -101,10 +118,34 @@ export default function NotificationBell() {
       await markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: "Y" })));
       setUnreadCount(0);
-      // 다른 컴포넌트와 동기화
       window.dispatchEvent(new CustomEvent('notificationsChanged'));
     } catch (error) {
       console.error("전체 읽음 처리 실패:", error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!window.confirm("모든 알림을 삭제하시겠습니까?")) return;
+    try {
+      await deleteAllNotifications();
+      setNotifications([]);
+      setUnreadCount(0);
+      window.dispatchEvent(new CustomEvent('notificationsChanged'));
+    } catch (error) {
+      console.error("전체 삭제 실패:", error);
+    }
+  };
+
+  const handleFollowBack = async (e, senderId, notificationId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await followUser(senderId);
+      alert("맞팔로우했습니다!");
+      if (notificationId) handleMarkAsRead(notificationId);
+    } catch (error) {
+      console.error("팔로우 실패:", error);
+      alert("팔로우에 실패했습니다.");
     }
   };
 
@@ -115,7 +156,7 @@ export default function NotificationBell() {
   if (!authInfo.isLogin) return null;
 
   return (
-    <div className="position-relative">
+    <div className="position-relative" ref={bellRef}>
       <button
         type="button"
         className="btn btn-sm slog-icon-button position-relative"
@@ -135,33 +176,56 @@ export default function NotificationBell() {
           style={{ position: "absolute", top: "45px", right: "0", width: "320px", zIndex: 1000 }}>
           <div className="p-3 border-bottom d-flex justify-content-between align-items-center bg-light bg-opacity-50">
             <h6 className="m-0 fw-bold" style={{ fontSize: "15px" }}>알림</h6>
-            {unreadCount > 0 && (
-              <button className="btn btn-link btn-sm text-decoration-none p-0 text-success fw-bold" 
-                style={{ fontSize: "12px" }} onClick={handleMarkAllAsRead}>
-                모두 읽음
-              </button>
-            )}
+            <div className="d-flex gap-2">
+              {notifications.length > 0 && (
+                <button className="btn btn-link btn-sm text-decoration-none p-0 text-muted" 
+                  style={{ fontSize: "12px" }} onClick={handleDeleteAll} title="모두 삭제">
+                  <i className="bi bi-trash3 me-1"></i>모두 삭제
+                </button>
+              )}
+              {unreadCount > 0 && (
+                <button className="btn btn-link btn-sm text-decoration-none p-0 text-success fw-bold" 
+                  style={{ fontSize: "12px" }} onClick={handleMarkAllAsRead}>
+                  <i className="bi bi-check2-all me-1"></i>모두 읽음
+                </button>
+              )}
+            </div>
           </div>
           
           <div style={{ maxHeight: "400px", overflowY: "auto" }}>
             {notifications.length > 0 ? (
               notifications.map((n) => (
-                <Link href={getNotificationLink(n)} key={n.notificationId}
-                  className={`notification-item d-block text-decoration-none ${n.isRead === "N" ? "unread" : ""}`}
-                  onClick={() => {
-                    if (n.isRead === "N") handleMarkAsRead(n.notificationId);
-                    setIsOpen(false);
-                  }}>
-                  <div className="small text-dark fw-bold mb-1">
-                    {n.type === "COMMENT" ? "새 댓글" : n.type === "LIKE" ? "좋아요" : "알림"}
-                  </div>
-                  <div className="text-muted" style={{ fontSize: "12px", lineHeight: "1.4" }}>
-                    {n.message}
-                  </div>
-                  <div className="text-end text-muted mt-1" style={{ fontSize: "10px" }}>
-                    {new Date(n.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "numeric", minute: "numeric" })}
-                  </div>
-                </Link>
+                <div key={n.notificationId} className="position-relative">
+                  <Link href={getNotificationLink(n)}
+                    className={`notification-item d-block text-decoration-none ${n.isRead === "N" ? "unread" : ""}`}
+                    onClick={() => {
+                      if (n.isRead === "N") handleMarkAsRead(n.notificationId);
+                      setIsOpen(false);
+                    }}>
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div>
+                        <div className="small text-dark fw-bold mb-1">
+                          {n.type === "COMMENT" ? "새 댓글" : n.type === "LIKE" ? "좋아요" : n.type === "FOLLOW" ? "팔로우" : "알림"}
+                        </div>
+                        <div className="text-muted" style={{ fontSize: "12px", lineHeight: "1.4" }}>
+                          {n.message}
+                        </div>
+                      </div>
+                      {n.type === "FOLLOW" && n.isRead === "N" && (
+                        <button 
+                          className="btn btn-outline-success btn-sm py-0 px-2 flex-shrink-0"
+                          style={{ fontSize: "11px", height: "22px" }}
+                          onClick={(e) => handleFollowBack(e, n.senderId, n.notificationId)}
+                        >
+                          맞팔로우
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-end text-muted mt-1" style={{ fontSize: "10px" }}>
+                      {new Date(n.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "numeric", minute: "numeric" })}
+                    </div>
+                  </Link>
+                </div>
               ))
             ) : (
               <div className="text-center py-5 text-muted">
