@@ -243,6 +243,7 @@ const ChatWindow = ({ room }) => {
                       className="rounded-circle" 
                       fill
                       style={{ objectFit: 'cover' }} 
+                      sizes="30px"
                     />
                   </div>
                 )}

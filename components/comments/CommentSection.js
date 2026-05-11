@@ -45,6 +45,7 @@ function CommentSection({ postId, postAuthorId }) {
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [newCommentId, setNewCommentId] = useState(null);
+  const [bestComment, setBestComment] = useState(null);
 
   const PAGE_SIZE = 10;
 
@@ -53,25 +54,30 @@ function CommentSection({ postId, postAuthorId }) {
 
   const fetchComments = useCallback(async (isMore = false, highlightId = null) => {
     if (!postId) return;
-    
+
     if (highlightId) {
       setNewCommentId(highlightId);
       setTimeout(() => setNewCommentId(null), 3000);
     }
 
     const targetPage = isMore ? page + 1 : 1;
-    
+
     if (isMore) setLoadingMore(true);
     else setLoading(true);
 
     setError("");
-    
+
     try {
       const result = await getComments(postId, targetPage, PAGE_SIZE);
       const newComments = result?.comments || [];
       const total = result?.totalCount || 0;
-      
+      const best = result?.bestComment || null;
+
       setTotalCount(total);
+
+      if (!isMore) {
+        setBestComment(best);
+      }
 
       if (isMore) {
         const combined = [...flatComments, ...newComments];
@@ -86,7 +92,7 @@ function CommentSection({ postId, postAuthorId }) {
 
       // 더 가져올 데이터가 있는지 확인 (현재 로드된 댓글 수가 전체 수보다 적으면 더보기 노출)
       setHasMore((isMore ? flatComments.length + newComments.length : newComments.length) < total);
-      
+
     } catch (err) {
       console.error("댓글 로딩 실패:", err);
       setError("댓글을 불러오는 데 실패했습니다.");
@@ -152,7 +158,7 @@ function CommentSection({ postId, postAuthorId }) {
         <i className="bi bi-chat-fill"></i>
         댓글 {totalCount}
       </h3>
-      
+
       {/* 댓글 작성 폼 */}
       <CommentForm onSubmit={handleCommentSubmit} />
 
@@ -160,9 +166,20 @@ function CommentSection({ postId, postAuthorId }) {
 
       {/* 댓글 리스트 */}
       <div className="mt-4">
-        <CommentList 
-          comments={comments} 
-          loading={loading && page === 1} 
+        {bestComment && (
+          <div className="best-comment-container">
+            <CommentList
+              comments={[bestComment]}
+              isBestMode={true}
+              onRefresh={() => fetchComments(false)}
+              postId={postId}
+              postAuthorId={postAuthorId}
+            />
+          </div>
+        )}
+        <CommentList
+          comments={comments}
+          loading={loading && page === 1}
           onRefresh={() => fetchComments(false)}
           postId={postId}
           postAuthorId={postAuthorId}
@@ -172,7 +189,7 @@ function CommentSection({ postId, postAuthorId }) {
 
       {/* 더보기 버튼 */}
       {hasMore && !loading && (
-        <button 
+        <button
           style={moreBtnStyle}
           onClick={() => fetchComments(true)}
           disabled={loadingMore}
