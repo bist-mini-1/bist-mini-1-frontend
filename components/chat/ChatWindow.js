@@ -116,9 +116,10 @@ const ChatWindow = ({ room }) => {
             );
           } else if (data.messageType === 'UPDATE') {
             setMessages((prev) => 
-              prev.map((m) => m.messageId === data.messageId ? { ...m, content: data.content } : m)
+              prev.map((m) => m.messageId === data.messageId ? { ...m, ...data } : m)
             );
           } else if (data.messageType === 'DELETE') {
+            // 하드 삭제 대비 (필요시)
             setMessages((prev) => prev.filter((m) => m.messageId !== data.messageId));
           } else {
             setMessages((prev) => [...prev, data]);
@@ -277,15 +278,15 @@ const ChatWindow = ({ room }) => {
                         </div>
                       ) : (
                         <div 
-                          className={`p-2 px-3 rounded-3 shadow-sm ${isMine ? 'bg-success text-white' : 'bg-white'}`}
+                          className={`p-2 px-3 rounded-3 shadow-sm ${msg.isDeleted ? (isMine ? 'bg-success text-white-50' : 'bg-light text-muted') : (isMine ? 'bg-success text-white' : 'bg-white')}`}
                           onContextMenu={(e) => {
-                            if (isMine) {
+                            if (isMine && !msg.isDeleted) {
                               e.preventDefault();
                               setActiveMenuId(msg.messageId);
                             }
                           }}
                           onClick={(e) => {
-                            if (isMine) {
+                            if (isMine && !msg.isDeleted) {
                               e.stopPropagation();
                               setActiveMenuId(activeMenuId === msg.messageId ? null : msg.messageId);
                             }
@@ -294,15 +295,16 @@ const ChatWindow = ({ room }) => {
                             fontSize: '14px', 
                             borderRadius: isMine ? '15px 15px 0 15px !important' : '15px 15px 15px 0 !important',
                             wordBreak: 'break-all',
-                            cursor: isMine ? 'pointer' : 'default'
+                            cursor: isMine && !msg.isDeleted ? 'pointer' : 'default',
+                            fontStyle: msg.isDeleted ? 'italic' : 'normal'
                           }}
                         >
-                          {msg.content}
+                          {msg.isDeleted ? '삭제된 메시지입니다.' : msg.content}
                         </div>
                       )}
 
                       {/* 수정/삭제 메뉴 */}
-                      {activeMenuId === msg.messageId && isMine && !isEditing && (
+                      {activeMenuId === msg.messageId && isMine && !isEditing && !msg.isDeleted && (
                         <div 
                           className="position-absolute bg-white border rounded shadow-sm py-1"
                           style={{ 
