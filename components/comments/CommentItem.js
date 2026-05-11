@@ -2,17 +2,45 @@
 
 import { useState, useEffect } from "react";
 import CommentForm from "./CommentForm";
-import { updateComment, deleteComment, createComment, checkIsMyComment } from "@/api/commentApi";
+import { updateComment, deleteComment, createComment, checkIsMyComment, toggleCommentLike } from "@/api/commentApi";
 import useAuth from "@/hooks/useAuth";
 import Image from "next/image";
 
-function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCommentId }) {
+function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId, isNew, newCommentId }) {
   const { authInfo } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showReplies, setShowReplies] = useState(true); // 기본적으로 답글 표시
+  const [showReplies, setShowReplies] = useState(true); 
   const [isAuthor, setIsAuthor] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // 좋아요 로컬 상태
+  const [likeCount, setLikeCount] = useState(comment.likeCount || 0);
+  const [isLiked, setIsLiked] = useState(comment.isLiked || false);
+  const [liking, setLiking] = useState(false);
+
+  // 게시글 작성자 여부 확인 (Badge 용)
+  const isPostAuthor = comment.memberId === postAuthorId;
+
+  // 좋아요 토글 핸들러
+  const handleLikeToggle = async () => {
+    if (!authInfo.isLogin) {
+      alert("좋아요를 누르려면 로그인이 필요합니다.");
+      return;
+    }
+    if (liking) return;
+
+    try {
+      setLiking(true);
+      const result = await toggleCommentLike(comment.commentId);
+      setIsLiked(result);
+      setLikeCount(prev => result ? prev + 1 : Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("좋아요 실패:", err);
+    } finally {
+      setLiking(false);
+    }
+  };
 
   // 서버로부터 본인 여부 확인
   useEffect(() => {
@@ -28,16 +56,19 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
       const localMatch = currentNickname.toLowerCase() === displayName.toLowerCase() || comment.isMine;
       setIsAuthor(localMatch);
 
-      // 2. 서버 기반 최종 판정 (새로 만든 API 활용)
+      // 2. 서버 기반 최종 판정
       const serverResult = await checkIsMyComment(comment.commentId);
       setIsAuthor(serverResult);
-      
-      // 디버깅 로그
-      console.log(`[Comment ${comment.commentId}] Server-Side isAuthor: ${serverResult}`);
     };
 
     checkOwnership();
   }, [authInfo.isLogin, authInfo.nickname, comment.commentId, comment.nickname, comment.memberId, comment.isMine]);
+
+  // 댓글 데이터가 바뀌면(onRefresh 후 등) 좋아요 상태 업데이트
+  useEffect(() => {
+    setLikeCount(comment.likeCount || 0);
+    setIsLiked(comment.isLiked || false);
+  }, [comment.likeCount, comment.isLiked]);
 
   // 드롭다운 바깥 클릭 시 닫기
   useEffect(() => {
@@ -118,6 +149,9 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
     fontWeight: "700",
     fontSize: isReply ? "0.85rem" : "0.95rem",
     color: "#111",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px"
   };
 
   const dateStyle = {
@@ -144,6 +178,13 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
     cursor: "pointer",
     marginRight: "12px",
     transition: "color 0.2s",
+    display: "flex",
+    alignItems: "center"
+  };
+
+  const likeButtonStyle = {
+    ...actionButtonStyle,
+    color: isLiked ? "#ff4d4f" : "#888",
   };
 
   const primaryActionButtonStyle = {
@@ -178,9 +219,9 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
     <div style={itemStyle} className={`comment-item-wrapper ${isNew ? "comment-item-new" : ""}`}>
       <div style={headerStyle}>
         <div style={avatarStyle}>
-          {comment.profileImage ? (
+          {comment.profileImageUrl ? (
             <Image 
-              src={comment.profileImage} 
+              src={comment.profileImageUrl} 
               alt={comment.nickname || "User"} 
               width={isReply ? 32 : 40} 
               height={isReply ? 32 : 40} 
@@ -191,7 +232,14 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={authorStyle}>{comment.nickname || `User ${comment.memberId}`}</span>
+          <div style={authorStyle}>
+            {comment.nickname || `User ${comment.memberId}`}
+            {isPostAuthor && (
+              <span className="badge rounded-pill text-bg-success" style={{ fontSize: "10px", padding: "3px 8px", fontWeight: "600" }}>
+                작성자
+              </span>
+            )}
+          </div>
           <span style={dateStyle}>
             {new Date(comment.createdAt).toLocaleString()}
             {comment.updatedAt && comment.updatedAt !== comment.createdAt && <span style={{ marginLeft: "8px", opacity: 0.7 }}>(수정됨)</span>}
@@ -240,7 +288,14 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        {comment.isDeleted !== "Y" && (
+          <button style={likeButtonStyle} onClick={handleLikeToggle} disabled={liking}>
+            <i className={`bi ${isLiked ? "bi-heart-fill" : "bi-heart"} me-1`}></i>
+            {likeCount > 0 ? likeCount : "좋아요"}
+          </button>
+        )}
+        
         {comment.isDeleted !== "Y" && !isReply && (
           <button 
             style={showReplyForm ? primaryActionButtonStyle : actionButtonStyle} 
@@ -250,6 +305,7 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
             답글 달기
           </button>
         )}
+
         {!isReply && comment.replies && comment.replies.length > 0 && (
           <button style={actionButtonStyle} onClick={() => setShowReplies(!showReplies)}>
             <i className={`bi ${showReplies ? "bi-chevron-up" : "bi-chevron-down"} me-1`}></i>
@@ -280,6 +336,7 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
                 isReply={true} 
                 onRefresh={onRefresh}
                 postId={postId}
+                postAuthorId={postAuthorId}
                 isNew={reply.commentId === newCommentId}
                 newCommentId={newCommentId}
               />

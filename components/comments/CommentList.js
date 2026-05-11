@@ -2,7 +2,7 @@
 
 import CommentItem from "./CommentItem";
 
-function CommentList({ comments, loading, onRefresh, postId, newCommentId }) {
+function CommentList({ comments, loading, onRefresh, postId, postAuthorId, newCommentId }) {
   if (loading && comments.length === 0) {
     return <div className="py-4 text-center text-muted">댓글을 불러오는 중입니다...</div>;
   }
@@ -19,6 +19,7 @@ function CommentList({ comments, loading, onRefresh, postId, newCommentId }) {
           comment={comment} 
           onRefresh={onRefresh}
           postId={postId}
+          postAuthorId={postAuthorId}
           isNew={comment.commentId === newCommentId}
         />
       ))}

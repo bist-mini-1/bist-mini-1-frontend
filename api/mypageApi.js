@@ -128,3 +128,33 @@ export const getFollowings = async (memberId) => {
   const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
   return res.data.data ?? { count: 0, users: [] };
 };
+
+/**
+ * 본인 여부 확인
+ * @param {number} memberId
+ * @returns {Promise<boolean>}
+ */
+export const checkIsMe = async (memberId) => {
+  try {
+    const res = await axiosInstance.get(`/api/members/${memberId}/is-me`);
+    return res.data.data === true;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
+ * 내 팔로워 목록 조회 (토큰 기반)
+ */
+export const getMyFollowers = async () => {
+  const res = await axiosInstance.get("/api/follows/me/followers");
+  return res.data.data ?? { count: 0, users: [] };
+};
+
+/**
+ * 내 팔로잉 목록 조회 (토큰 기반)
+ */
+export const getMyFollowings = async () => {
+  const res = await axiosInstance.get("/api/follows/me/followings");
+  return res.data.data ?? { count: 0, users: [] };
+};

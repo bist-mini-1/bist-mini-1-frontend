@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import useAuth from "../../hooks/useAuth";
 import { getNotifications, markAsRead, markAllAsRead, deleteAllNotifications } from "../../api/notificationApi";
-import { followUser } from "../../api/followApi";
+import { followUser } from "../../api/mypageApi";
 import Link from "next/link";
 
 export default function NotificationBell() {

@@ -33,8 +33,9 @@ const buildCommentTree = (flatList) => {
 /**
  * 댓글 섹션 전체를 관리하는 메인 컴포넌트
  * @param {string|number} postId - 해당 포스트의 ID (bno)
+ * @param {number} postAuthorId - 게시글 작성자 ID
  */
-function CommentSection({ postId }) {
+function CommentSection({ postId, postAuthorId }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,6 +127,7 @@ function CommentSection({ postId }) {
         loading={loading} 
         onRefresh={fetchComments}
         postId={postId}
+        postAuthorId={postAuthorId}
         newCommentId={newCommentId}
       />
     </div>
