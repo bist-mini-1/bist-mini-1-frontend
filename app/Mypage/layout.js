@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getMyProfile, getFollowCount } from "../../api/mypageApi";
+import { getMemberIdFromToken } from "../../utils/tokenUtils";
 
 const NAV = [
   { href: "/Mypage/character", label: "캐릭터 성장", icon: "bi-person-badge-fill" },
@@ -28,14 +29,32 @@ export default function MyPageLayout({ children }) {
     const init = async () => {
       setNickname(localStorage.getItem("nickname") || "");
       setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
+
+      // memberId: localStorage → JWT 토큰 순으로 취득
+      let memberId = localStorage.getItem("memberId");
+      if (!memberId) {
+        memberId = getMemberIdFromToken(token);
+        if (memberId) localStorage.setItem("memberId", memberId);
+      }
+
+      // getMyProfile()이 실패해도 팔로우 수는 토큰 기반으로 조회
+      if (memberId) {
+        try {
+          const counts = await getFollowCount(memberId);
+          if (counts) setFollowCount(counts);
+        } catch {
+          // 조회 실패 시 기본값 유지
+        }
+      }
+
+      // 프로필 정보 추가 동기화 (실패해도 무시)
       try {
         const profile = await getMyProfile();
         if (profile?.memberId) {
-          const counts = await getFollowCount(profile.memberId);
-          if (counts) setFollowCount(counts);
+          localStorage.setItem("memberId", String(profile.memberId));
         }
       } catch {
-        // 조회 실패 시 기본값 유지
+        // 무시
       }
     };
     init();
@@ -76,21 +95,27 @@ export default function MyPageLayout({ children }) {
             {nickname || "사용자"}
           </div>
 
-          {/* 팔로워 / 팔로잉 숫자 */}
+          {/* 팔로워 / 팔로잉 숫자 — 클릭 시 목록 페이지로 이동 */}
           <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 6 }}>
-            <div style={{ textAlign: "center" }}>
+            <Link href="/Mypage/followers" style={{ textAlign: "center", textDecoration: "none", cursor: "pointer" }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.75"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            >
               <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>
                 {followCount.followerCount}
               </div>
               <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 2 }}>팔로워</div>
-            </div>
+            </Link>
             <div style={{ width: 1, background: "rgba(255,255,255,0.2)" }} />
-            <div style={{ textAlign: "center" }}>
+            <Link href="/Mypage/followings" style={{ textAlign: "center", textDecoration: "none", cursor: "pointer" }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.75"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+            >
               <div style={{ color: "white", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>
                 {followCount.followingCount}
               </div>
               <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10, marginTop: 2 }}>팔로잉</div>
-            </div>
+            </Link>
           </div>
 
         </div>
