@@ -79,8 +79,8 @@ export default function PostWritePage() {
           onCancel={() => router.back()}
           submitting={submitting}
           title="게시글 생성"
-          subtitle="POST WRITE"
-          badgeText="title / content / tags / thumbnail"
+          subtitle=""
+          badgeText=""
           submitLabel="게시글 생성"
           tempLabel="임시 저장"
           cancelLabel="작성 취소"

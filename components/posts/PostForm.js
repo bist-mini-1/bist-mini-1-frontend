@@ -15,15 +15,15 @@ const toFormValues = (initialValues) => ({
   content: initialValues?.content ?? "",
   tags: Array.isArray(initialValues?.tags)
     ? initialValues.tags
-        .map((tag) => {
-          if (typeof tag === "string") {
-            return tag;
-          }
+      .map((tag) => {
+        if (typeof tag === "string") {
+          return tag;
+        }
 
-          return tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? "";
-        })
-        .filter(Boolean)
-        .join(", ")
+        return tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? "";
+      })
+      .filter(Boolean)
+      .join(", ")
     : initialValues?.tags ?? "",
   thumbnail: initialValues?.thumbnail ?? initialValues?.thumbnailUrl ?? "",
   isPublic: initialValues?.isPublic ?? initialValues?.is_public ?? "Y",
@@ -42,12 +42,8 @@ export default function PostForm({
   tempLabel = "임시 저장",
   cancelLabel = "작성 취소",
 }) {
-  const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    setForm(toFormValues(initialValues));
-  }, [initialValues]);
+  const [form, setForm] = useState(() => toFormValues(initialValues));
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -118,10 +114,12 @@ export default function PostForm({
       <div className="card-header bg-white border-0 px-4 pt-4 pb-0">
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
-            <div className="text-muted small fw-semibold mb-1">{subtitle}</div>
+            {subtitle ? <div className="text-muted small fw-semibold mb-1">{subtitle}</div> : null}
             <h1 className="h3 fw-bold mb-0">{title}</h1>
           </div>
-          <div className="badge rounded-pill text-bg-light border text-dark px-3 py-2">{badgeText}</div>
+          {badgeText ? (
+            <div className="badge rounded-pill text-bg-light border text-dark px-3 py-2">{badgeText}</div>
+          ) : null}
         </div>
       </div>
 
@@ -142,19 +140,6 @@ export default function PostForm({
           </div>
 
           <div className="col-12">
-            <label className="form-label fw-semibold">내용</label>
-            <textarea
-              name="content"
-              className={`form-control ${errors.content ? "is-invalid" : ""}`}
-              rows={12}
-              placeholder="게시글 내용을 입력하세요"
-              value={form.content}
-              onChange={handleChange}
-            />
-            {errors.content && <div className="invalid-feedback d-block">{errors.content}</div>}
-          </div>
-
-          <div className="col-12 col-lg-6">
             <label className="form-label fw-semibold">태그</label>
             <input
               type="text"
@@ -165,6 +150,19 @@ export default function PostForm({
               onChange={handleChange}
             />
             <div className="form-text">쉼표로 구분해서 입력하세요.</div>
+          </div>
+
+          <div className="col-12">
+            <label className="form-label fw-semibold">내용</label>
+            <textarea
+              name="content"
+              className={`form-control ${errors.content ? "is-invalid" : ""}`}
+              rows={12}
+              placeholder="게시글 내용을 입력하세요"
+              value={form.content}
+              onChange={handleChange}
+            />
+            {errors.content && <div className="invalid-feedback d-block">{errors.content}</div>}
           </div>
 
           <div className="col-12 col-lg-6">
