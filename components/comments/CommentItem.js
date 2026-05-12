@@ -1,43 +1,52 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import CommentForm from "./CommentForm";
-import { updateComment, deleteComment, createComment, checkIsMyComment } from "@/api/commentApi";
+import { updateComment, deleteComment, createComment, checkIsMyComment, toggleCommentLike } from "@/api/commentApi";
 import useAuth from "@/hooks/useAuth";
 import Image from "next/image";
 
-function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCommentId }) {
+function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId, isNew, newCommentId, isBest }) {
   const { authInfo } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [showReplies, setShowReplies] = useState(true); // 기본적으로 답글 표시
-  const [isAuthor, setIsAuthor] = useState(false);
+  const [showReplies, setShowReplies] = useState(true); 
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // 서버로부터 본인 여부 확인
+  // 좋아요 로컬 상태
+  const [likeCount, setLikeCount] = useState(comment.likeCount || 0);
+  const [isLiked, setIsLiked] = useState(comment.isLiked || false);
+  const [liking, setLiking] = useState(false);
+
+  // 게시글 작성자 여부 확인 (Badge 용)
+  const isPostAuthor = comment.memberId === postAuthorId;
+
+  // 좋아요 토글 핸들러
+  const handleLikeToggle = async () => {
+    if (!authInfo.isLogin) {
+      alert("좋아요를 누르려면 로그인이 필요합니다.");
+      return;
+    }
+    if (liking) return;
+
+    try {
+      setLiking(true);
+      const result = await toggleCommentLike(comment.commentId);
+      setIsLiked(result);
+      setLikeCount(prev => result ? prev + 1 : Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("좋아요 실패:", err);
+    } finally {
+      setLiking(false);
+    }
+  };
+
+  // 댓글 데이터가 바뀌면(onRefresh 후 등) 좋아요 상태 업데이트
   useEffect(() => {
-    const checkOwnership = async () => {
-      if (!authInfo.isLogin || !comment.commentId) {
-        setIsAuthor(false);
-        return;
-      }
-
-      // 1. 로컬 기반 1차 판정 (빠른 반응성을 위해)
-      const displayName = (comment.nickname || `User ${comment.memberId}`).trim();
-      const currentNickname = (authInfo.nickname || "").trim();
-      const localMatch = currentNickname.toLowerCase() === displayName.toLowerCase() || comment.isMine;
-      setIsAuthor(localMatch);
-
-      // 2. 서버 기반 최종 판정 (새로 만든 API 활용)
-      const serverResult = await checkIsMyComment(comment.commentId);
-      setIsAuthor(serverResult);
-      
-      // 디버깅 로그
-      console.log(`[Comment ${comment.commentId}] Server-Side isAuthor: ${serverResult}`);
-    };
-
-    checkOwnership();
-  }, [authInfo.isLogin, authInfo.nickname, comment.commentId, comment.nickname, comment.memberId, comment.isMine]);
+    setLikeCount(comment.likeCount || 0);
+    setIsLiked(comment.isLiked || false);
+  }, [comment.likeCount, comment.isLiked]);
 
   // 드롭다운 바깥 클릭 시 닫기
   useEffect(() => {
@@ -84,12 +93,14 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
   };
 
   const itemStyle = {
-    paddingTop: isReply ? "10px" : "24px",
-    paddingBottom: isReply ? "0" : "24px",
-    borderBottom: isReply ? "none" : "1px solid #f1f1f1",
+    paddingTop: isReply ? "10px" : (isBest ? "16px" : "24px"),
+    paddingBottom: isReply ? "0" : (isBest ? "12px" : "24px"),
+    borderBottom: isReply ? "none" : (isBest ? "none" : "1px solid #f1f1f1"),
     marginLeft: isReply ? "48px" : "0",
     opacity: comment.isDeleted === "Y" ? 0.6 : 1,
     position: "relative",
+    backgroundColor: isBest ? "#fcfcfc" : "transparent",
+    borderRadius: isBest ? "12px" : "0",
   };
 
   const headerStyle = {
@@ -118,6 +129,9 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
     fontWeight: "700",
     fontSize: isReply ? "0.85rem" : "0.95rem",
     color: "#111",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px"
   };
 
   const dateStyle = {
@@ -144,6 +158,13 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
     cursor: "pointer",
     marginRight: "12px",
     transition: "color 0.2s",
+    display: "flex",
+    alignItems: "center"
+  };
+
+  const likeButtonStyle = {
+    ...actionButtonStyle,
+    color: isLiked ? "#ff4d4f" : "#888",
   };
 
   const primaryActionButtonStyle = {
@@ -177,21 +198,34 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
   return (
     <div style={itemStyle} className={`comment-item-wrapper ${isNew ? "comment-item-new" : ""}`}>
       <div style={headerStyle}>
-        <div style={avatarStyle}>
-          {comment.profileImage ? (
+        <Link href={`/Mypage/user/${comment.memberId}`} className="text-decoration-none">
+          <div style={avatarStyle}>
             <Image 
-              src={comment.profileImage} 
+              src={comment.profileImageUrl || "/images/default-profile.png"} 
               alt={comment.nickname || "User"} 
               width={isReply ? 32 : 40} 
               height={isReply ? 32 : 40} 
-              style={{ objectFit: "cover" }} 
+              style={{ objectFit: "cover" }}
+              sizes="(max-width: 768px) 40px, 40px"
             />
-          ) : (
-            <i className="bi bi-person-circle" style={{ color: "#ddd", fontSize: isReply ? "1.2rem" : "1.5rem" }}></i>
-          )}
-        </div>
+          </div>
+        </Link>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <span style={authorStyle}>{comment.nickname || `User ${comment.memberId}`}</span>
+          <div style={authorStyle}>
+            <Link href={`/Mypage/user/${comment.memberId}`} className="text-decoration-none text-dark hover-underline">
+              {comment.nickname || `User ${comment.memberId}`}
+            </Link>
+            {isBest && (
+              <span className="badge rounded-pill text-bg-warning" style={{ fontSize: "10px", padding: "3px 8px", fontWeight: "700", color: "#fff" }}>
+                <i className="bi bi-star-fill me-1"></i> 베스트
+              </span>
+            )}
+            {isPostAuthor && (
+              <span className="badge rounded-pill text-bg-success" style={{ fontSize: "10px", padding: "3px 8px", fontWeight: "600" }}>
+                작성자
+              </span>
+            )}
+          </div>
           <span style={dateStyle}>
             {new Date(comment.createdAt).toLocaleString()}
             {comment.updatedAt && comment.updatedAt !== comment.createdAt && <span style={{ marginLeft: "8px", opacity: 0.7 }}>(수정됨)</span>}
@@ -199,7 +233,8 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
         </div>
         
         {/* 수정/삭제 드롭다운 메뉴 */}
-        {isAuthor && comment.isDeleted !== "Y" && !showEditForm && (
+        {/* 수정/삭제 드롭다운 메뉴 (서버에서 부여한 권한 기반) */}
+        {(comment.canDelete || comment.isMine) && comment.isDeleted !== "Y" && !showEditForm && (
           <div style={{ marginLeft: "auto", position: "relative" }}>
             <button 
               style={meatballStyle} 
@@ -214,9 +249,11 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
             
             {showDropdown && (
               <div className="comment-dropdown">
-                <div className="comment-dropdown-item" onClick={() => setShowEditForm(true)}>
-                  <i className="bi bi-pencil-square"></i> 수정하기
-                </div>
+                {comment.isMine && (
+                  <div className="comment-dropdown-item" onClick={() => setShowEditForm(true)}>
+                    <i className="bi bi-pencil-square"></i> 수정하기
+                  </div>
+                )}
                 <div className="comment-dropdown-item delete" onClick={handleDelete}>
                   <i className="bi bi-trash"></i> 삭제하기
                 </div>
@@ -240,7 +277,14 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        {comment.isDeleted !== "Y" && (
+          <button style={likeButtonStyle} onClick={handleLikeToggle} disabled={liking}>
+            <i className={`bi ${isLiked ? "bi-heart-fill" : "bi-heart"} me-1`}></i>
+            {likeCount > 0 ? likeCount : "좋아요"}
+          </button>
+        )}
+        
         {comment.isDeleted !== "Y" && !isReply && (
           <button 
             style={showReplyForm ? primaryActionButtonStyle : actionButtonStyle} 
@@ -250,6 +294,7 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
             답글 달기
           </button>
         )}
+
         {!isReply && comment.replies && comment.replies.length > 0 && (
           <button style={actionButtonStyle} onClick={() => setShowReplies(!showReplies)}>
             <i className={`bi ${showReplies ? "bi-chevron-up" : "bi-chevron-down"} me-1`}></i>
@@ -280,6 +325,7 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, isNew, newCo
                 isReply={true} 
                 onRefresh={onRefresh}
                 postId={postId}
+                postAuthorId={postAuthorId}
                 isNew={reply.commentId === newCommentId}
                 newCommentId={newCommentId}
               />

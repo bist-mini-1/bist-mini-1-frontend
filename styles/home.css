@@ -1,0 +1,45 @@
+.post-section-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.slog-main-tabs {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  min-width: 210px;
+}
+
+.slog-main-tab {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 0 0 12px;
+  color: #7b8580;
+  font-size: 16px;
+  font-weight: 800;
+  transition: color 0.15s ease;
+}
+
+.slog-main-tab:hover {
+  color: var(--slog-green);
+}
+
+.slog-main-tab.active {
+  color: var(--slog-green-dark);
+}
+
+.slog-main-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background-color: var(--slog-green-dark);
+  border-radius: 999px;
+  transform: translateX(-50%);
+}

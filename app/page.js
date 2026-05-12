@@ -5,70 +5,135 @@ import Link from "next/link";
 import PostList from "@/components/posts/PostList";
 import Pagination from "@/components/common/Pagination";
 import SearchBox from "@/components/common/SearchBox";
+import PostSortTabs from "@/components/home/PostSortTabs";
 import { getPostList } from "@/api/postApi";
+import useAuth from "@/hooks/useAuth";
 
 const PAGE_SIZE = 12;
 
 export default function Home() {
+  const { authInfo } = useAuth();
+
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [sort, setSort] = useState("latest");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPostList = async () => {
-      try {
-        setLoading(true);
+    let isActive = true;
 
-        const data = await getPostList({
-          page,
-          size: PAGE_SIZE,
-          keyword: searchKeyword,
-        });
+    getPostList({
+      page,
+      size: PAGE_SIZE,
+      keyword: searchKeyword,
+      sort,
+    })
+      .then((data) => {
+        if (!isActive) {
+          return;
+        }
 
         setPosts(data.posts || []);
         setTotalPages(data.totalPages || 1);
         setTotalCount(data.totalCount || 0);
-      } catch (error) {
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
         console.error(error);
         alert("게시글 목록을 불러오지 못했습니다.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .finally(() => {
+        if (!isActive) {
+          return;
+        }
 
-    fetchPostList();
-  }, [page, searchKeyword]);
+        setLoading(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [page, searchKeyword, sort]);
+
+  const handleLikeChanged = ({ postId, isLiked, likeCount }) => {
+    setPosts((prevPosts) => {
+      const updatedPosts = prevPosts.map((post) =>
+        post.postId === postId
+          ? {
+              ...post,
+              isLiked,
+              likeCount,
+            }
+          : post,
+      );
+
+      if (sort !== "popular") {
+        return updatedPosts;
+      }
+
+      return [...updatedPosts].sort((a, b) => {
+        const likeDiff = (b.likeCount ?? 0) - (a.likeCount ?? 0);
+
+        if (likeDiff !== 0) {
+          return likeDiff;
+        }
+
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+    });
+  };
 
   const handlePageChange = (pageNumber) => {
-    if (pageNumber < 1 || pageNumber > totalPages) {
+    if (pageNumber < 1 || pageNumber > totalPages || pageNumber === page) {
       return;
     }
 
+    setLoading(true);
     setPage(pageNumber);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSearch = (keyword) => {
+    if (keyword === searchKeyword && page === 1) {
+      return;
+    }
+
+    setLoading(true);
     setPage(1);
     setSearchKeyword(keyword);
+  };
+
+  const handleSortChange = (nextSort) => {
+    if (nextSort === sort && page === 1) {
+      return;
+    }
+
+    setLoading(true);
+    setPage(1);
+    setSort(nextSort);
   };
 
   return (
     <main>
       <section>
         <div className="post-section-header">
-          <div className="post-tab-active">
-            {searchKeyword ? "검색 결과" : "최신"}
-          </div>
+          <PostSortTabs
+            sort={sort}
+            onSortChange={handleSortChange}
+            isLogin={authInfo.isLogin}
+          />
 
           <div className="post-header-search">
             <SearchBox onSearch={handleSearch} searchKeyword={searchKeyword} />
           </div>
 
-          <Link href="/post/PostWrite" className="btn slog-btn-write">
+          <Link href="/posts/write" className="btn slog-btn-write">
             새 글 작성
           </Link>
         </div>
@@ -88,10 +153,13 @@ export default function Home() {
           <>
             <PostList
               posts={posts}
+              onLikeChanged={handleLikeChanged}
               emptyMessage={
                 searchKeyword
                   ? "검색 결과가 없습니다."
-                  : "등록된 게시글이 없습니다."
+                  : sort === "recommend"
+                    ? "관심 태그와 일치하는 추천 게시글이 없습니다."
+                    : "등록된 게시글이 없습니다."
               }
             />
 

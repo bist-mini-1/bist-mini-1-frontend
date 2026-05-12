@@ -6,8 +6,6 @@ import useAuth from "../../hooks/useAuth";
 import Image from "next/image";
 import NotificationBell from "../notification/NotificationBell";
 
-
-
 export default function AppHeader() {
   const router = useRouter();
   const { authInfo, logoutAuth } = useAuth();
@@ -26,21 +24,22 @@ export default function AppHeader() {
     >
       <div className="container d-flex align-items-center justify-content-between">
         <Link href="/" className="navbar-brand d-flex align-items-center m-0">
-          <Image
-            src="/images/slog-logo.png"
-            alt="SLog 로고"
-            width={150}
-            height={50}
-            priority
-            style={{
-              objectFit: "contain",
-            }}
-          />
+          <div className="slog-header-logo-wrap">
+            <Image
+              src="/images/slog-logo.png"
+              alt="SLog 로고"
+              fill
+              priority
+              sizes="150px"
+              style={{
+                objectFit: "contain",
+              }}
+            />
+          </div>
         </Link>
 
         <div className="d-flex align-items-center gap-2">
           <NotificationBell />
-
 
           {authInfo.isLogin ? (
             <>

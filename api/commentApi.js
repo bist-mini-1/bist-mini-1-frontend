@@ -1,14 +1,18 @@
 import axiosInstance from "./axiosInstance";
 
 /**
- * 특정 포스트의 댓글 목록을 가져옵니다.
+ * 특정 포스트의 댓글 목록을 가져옵니다. (페이징 지원)
  * @param {number|string} postId - 게시글 ID
+ * @param {number} page - 페이지 번호
+ * @param {number} size - 페이지 크기
  * @returns {Promise<Array>} 댓글 목록 배열
  */
-export const getComments = async (postId) => {
-  const response = await axiosInstance.get(`/api/comments/post/${postId}`);
-  // API 명세상 { status, message, data: [...] } 형태로 반환됨
-  return response.data?.data || [];
+export const getComments = async (postId, page = 1, size = 10) => {
+  const response = await axiosInstance.get(`/api/comments/post/${postId}`, {
+    params: { page, size }
+  });
+  // API 명세상 { status, message, data: { comments: [...], totalCount: 15 } } 형태로 반환됨
+  return response.data?.data;
 };
 
 /**
@@ -60,4 +64,14 @@ export const checkIsMyComment = async (commentId) => {
   } catch (error) {
     return false;
   }
+};
+
+/**
+ * 댓글 좋아요를 토글합니다.
+ * @param {number} commentId - 댓글 ID
+ * @returns {Promise<boolean>} 좋아요 상태 (true: 추가됨, false: 취소됨)
+ */
+export const toggleCommentLike = async (commentId) => {
+  const response = await axiosInstance.post(`/api/comments/${commentId}/like`);
+  return response.data?.data;
 };

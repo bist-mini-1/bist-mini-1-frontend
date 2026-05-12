@@ -694,7 +694,7 @@ function PostDetailPage() {
       )}
 
       {post?.postId && (
-        <CommentSection postId={post.postId} />
+        <CommentSection postId={post.postId} postAuthorId={post.memberId} />
       )}
 
       <DeleteConfirmDialog

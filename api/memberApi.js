@@ -34,3 +34,8 @@ export const checkNickname = async (nickname) => {
 
   return response.data;
 };
+
+export const getTagList = async () => {
+  const response = await axiosInstance.get("/api/tags");
+  return response.data;
+};
