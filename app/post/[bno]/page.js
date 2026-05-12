@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import useAuth from "@/hooks/useAuth";
 import CommentSection from "@/components/comments/CommentSection";
 
@@ -693,7 +694,7 @@ function PostDetailPage() {
       )}
 
       {post?.postId && (
-        <CommentSection postId={post.postId} postAuthorId={post.memberId} />
+        <CommentSection postId={post.postId} />
       )}
 
       <DeleteConfirmDialog

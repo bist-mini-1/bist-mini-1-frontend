@@ -44,7 +44,7 @@ export const updateProfileImage = async (file) => {
   const formData = new FormData();
   formData.append("profileImage", file);
   const res = await axiosInstance.patch("/api/members/me/profile-image", formData, {
-    headers: { "Content-Type": undefined }, // FormData 전송 시 boundary 포함한 Content-Type을 브라우저가 자동 설정하도록
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data.data; // { profileImageUrl }
 };
@@ -67,42 +67,6 @@ export const getBookmarkedPosts = async () => {
 };
 
 /**
- * 팔로우 취소
- * @param {number} followingId - 언팔할 상대방 memberId
- */
-export const unfollowUser = async (followingId) => {
-  const res = await axiosInstance.delete(`/api/follows/${followingId}`);
-  return res.data;
-};
-
-/**
- * 특정 유저 공개 프로필 조회 → { memberId, nickname, bio, profileImageUrl }
- * @param {number} memberId
- */
-export const getUserProfile = async (memberId) => {
-  const res = await axiosInstance.get(`/api/members/${memberId}/profile`);
-  return res.data.data;
-};
-
-/**
- * 특정 유저 공개 게시글 목록 조회 → MyPostResponse[]
- * @param {number} memberId
- */
-export const getUserPosts = async (memberId) => {
-  const res = await axiosInstance.get(`/api/members/${memberId}/posts`);
-  return res.data.data ?? [];
-};
-
-/**
- * 팔로우 하기
- * @param {number} followingId - 팔로우할 상대방 memberId
- */
-export const followUser = async (followingId) => {
-  const res = await axiosInstance.post(`/api/follows/${followingId}`);
-  return res.data;
-};
-
-/**
  * 팔로워/팔로잉 수 조회 → { followerCount, followingCount }
  * @param {number} memberId
  */
@@ -112,66 +76,19 @@ export const getFollowCount = async (memberId) => {
 };
 
 /**
- * 팔로워 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
+ * 특정 멤버 프로필 조회 (로그인 필요 X) → { memberId, loginId, nickname, bio, profileImageUrl, isFollowing }
  * @param {number} memberId
  */
-export const getFollowers = async (memberId) => {
-  const res = await axiosInstance.get(`/api/follows/${memberId}/followers`);
-  return res.data.data ?? { count: 0, users: [] };
+export const getMemberProfile = async (memberId) => {
+  const res = await axiosInstance.get(`/api/members/${memberId}`);
+  return res.data.data;
 };
 
 /**
- * 팔로잉 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
+ * 팔로우/언팔로우 토글 → { data: true = 팔로우됨, false = 언팔로우됨 }
  * @param {number} memberId
  */
-export const getFollowings = async (memberId) => {
-  const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
-  return res.data.data ?? { count: 0, users: [] };
-};
-
-/**
- * 본인 여부 확인
- * @param {number} memberId
- * @returns {Promise<boolean>}
- */
-export const checkIsMe = async (memberId) => {
-  try {
-    const res = await axiosInstance.get(`/api/members/${memberId}/is-me`);
-    return res.data.data === true;
-  } catch (error) {
-    return false;
-  }
-};
-
-/**
- * 내 팔로워 목록 조회 (토큰 기반)
- */
-export const getMyFollowers = async () => {
-  const res = await axiosInstance.get("/api/follows/me/followers");
-  return res.data.data ?? { count: 0, users: [] };
-};
-
-/**
- * 내 팔로잉 목록 조회 (토큰 기반)
- */
-export const getMyFollowings = async () => {
-  const res = await axiosInstance.get("/api/follows/me/followings");
-  return res.data.data ?? { count: 0, users: [] };
-};
-
-/**
- * 내 관심 태그 목록 조회 → number[] (tagId 배열)
- */
-export const getMyInterestTags = async () => {
-  const res = await axiosInstance.get("/api/members/me/interest-tags");
-  return res.data.data ?? [];
-};
-
-/**
- * 내 관심 태그 수정
- * @param {number[]} tagIds - 선택된 tagId 배열
- */
-export const updateInterestTags = async (tagIds) => {
-  const res = await axiosInstance.patch("/api/members/me/interest-tags", { tagIds });
-  return res.data;
+export const toggleFollowMember = async (memberId) => {
+  const res = await axiosInstance.post(`/api/follows/${memberId}`);
+  return res.data.data; // boolean
 };
