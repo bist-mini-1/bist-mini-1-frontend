@@ -70,6 +70,7 @@ export default function PostForm({
   const [content, setContent] = useState(() => initialValues?.content ?? "");
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState([]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -100,10 +101,9 @@ export default function PostForm({
         throw new Error("이미지 업로드 응답에 fileUrl이 없습니다.");
       }
 
-      // 상대 경로를 절대 경로로 변환 (백엔드 호스트 포함)
-      if (imageUrl.startsWith("/api/attachments")) {
-        imageUrl = getBackendAbsoluteUrl(imageUrl);
-      }
+      // 마크다운에는 상대 경로를 저장합니다 (환경 간 이식성 보장)
+      // 실제 조회 시에는 프론트엔드에서 절대 경로로 변환하여 처리합니다.
+
 
       const altText = file.name?.replace(/\.[^.]+$/, "") || "image";
       const imageMarkdown = `![${altText}](${imageUrl})`;
@@ -114,6 +114,19 @@ export default function PostForm({
         }
 
         return `${current.trimEnd()}\n\n${imageMarkdown}`;
+      });
+
+      // 업로드된 이미지 목록에 추가 (썸네일 선택용)
+      setUploadedImages((prev) => {
+        const next = [...prev, imageUrl];
+        // 썸네일이 아직 설정되지 않았다면, 첫 번째 업로드 이미지를 자동으로 썸네일로 설정
+        setForm((f) => {
+          if (!f.thumbnail || f.thumbnail.trim() === "") {
+            return { ...f, thumbnail: imageUrl };
+          }
+          return f;
+        });
+        return next;
       });
     } catch (error) {
       console.error("Image upload error:", error);
@@ -249,6 +262,18 @@ export default function PostForm({
                   }}
                   height={420}
                   preview="live"
+                  previewOptions={{
+                    components: {
+                      img: ({ src, alt }) => {
+                        if (!src || !String(src).trim()) return null;
+                        let absoluteSrc = src;
+                        if (src.startsWith("/api/attachments")) {
+                          absoluteSrc = getBackendAbsoluteUrl(src);
+                        }
+                        return <img src={absoluteSrc} alt={alt || "이미지"} style={{ maxWidth: "100%" }} />;
+                      },
+                    },
+                  }}
                   textareaProps={{
                     placeholder: "게시글 내용을 입력하세요",
                   }}
@@ -286,6 +311,37 @@ export default function PostForm({
               <div className="invalid-feedback d-block">{errors.thumbnail}</div>
             ) : (
               <div className="form-text">선택 입력입니다.</div>
+            )}
+
+            {uploadedImages.length > 0 && (
+              <div className="mt-2">
+                <div className="small text-muted mb-1">업로드된 이미지에서 선택:</div>
+                <div className="d-flex flex-wrap gap-2">
+                  {uploadedImages.map((url, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={`btn p-0 border rounded-2 overflow-hidden ${
+                        form.thumbnail === url ? "border-primary border-2" : ""
+                      }`}
+                      style={{ width: "60px", height: "60px" }}
+                      onClick={() =>
+                        setForm((prev) => ({ ...prev, thumbnail: url }))
+                      }
+                    >
+                      <img
+                        src={url}
+                        alt="Thumbnail suggestion"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

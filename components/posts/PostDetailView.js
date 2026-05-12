@@ -207,7 +207,9 @@ export default function PostDetailView({
 
               <div className="post-detail-info-row">
                 <div className="post-detail-author-row">
-                  <span className="post-detail-author-name">{getAuthorDisplayName(post)}</span>
+                  <Link href={`/Mypage/user/${post?.memberId}`} className="post-detail-author-name text-decoration-none">
+                    {getAuthorDisplayName(post)}
+                  </Link>
                   <span className="post-detail-separator">·</span>
                   <span>{displayDate}</span>
                   <span className="post-detail-separator">·</span>
@@ -263,11 +265,17 @@ export default function PostDetailView({
           <div className="post-author-card">
             {authorProfile?.profileImageUrl && String(authorProfile.profileImageUrl).trim() ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={authorProfile.profileImageUrl}
-                alt={authorProfile.nickname || getAuthorDisplayName(post)}
-                className="post-author-avatar"
-              />
+              <Link href={`/Mypage/user/${post?.memberId}`}>
+                <img
+                  src={
+                    authorProfile.profileImageUrl.startsWith("http")
+                      ? authorProfile.profileImageUrl
+                      : getBackendAbsoluteUrl(authorProfile.profileImageUrl)
+                  }
+                  alt={authorProfile.nickname || getAuthorDisplayName(post)}
+                  className="post-author-avatar"
+                />
+              </Link>
             ) : (
               <div className="post-author-avatar post-author-avatar-placeholder">👤</div>
             )}

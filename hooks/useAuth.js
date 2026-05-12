@@ -15,20 +15,24 @@ const getAuthInfo = () => {
 
   const accessToken = localStorage.getItem("accessToken");
   const nickname = localStorage.getItem("nickname");
+  const memberId = localStorage.getItem("memberId");
 
   if (!accessToken || isTokenExpired(accessToken)) {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("nickname");
+    localStorage.removeItem("memberId");
 
     return {
       isLogin: false,
       nickname: "",
+      memberId: null,
     };
   }
 
   return {
     isLogin: true,
     nickname: nickname || "",
+    memberId: memberId ? Number(memberId) : null,
   };
 };
 
@@ -40,6 +44,7 @@ const getServerSnapshot = () => {
   return JSON.stringify({
     isLogin: false,
     nickname: "",
+    memberId: null,
   });
 };
 
