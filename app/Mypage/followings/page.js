@@ -182,7 +182,7 @@ export default function FollowingsPage() {
         </div>
         {searchKeyword && (
           <p style={{ fontSize: 12, color: "#888", margin: "8px 0 0" }}>
-            <strong style={{ color: "#333" }}>"{searchKeyword}"</strong> 검색 결과{" "}
+            <strong style={{ color: "#333" }}>{searchKeyword}</strong> 검색 결과{" "}
             <strong style={{ color: GREEN }}>{filteredUsers.length}</strong>명
           </p>
         )}
