@@ -1,0 +1,41 @@
+.slog-pagination-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 36px;
+  margin-bottom: 24px;
+}
+
+.slog-page-button {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--slog-green-border);
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #2f5f46;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.slog-page-button:hover:not(:disabled) {
+  border-color: var(--slog-green);
+  background-color: var(--slog-green-soft);
+  color: var(--slog-green);
+}
+
+.slog-page-button.active {
+  border-color: var(--slog-green);
+  background-color: var(--slog-green);
+  color: #ffffff;
+}
+
+.slog-page-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

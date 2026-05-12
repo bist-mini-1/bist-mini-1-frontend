@@ -8,17 +8,18 @@ export default function JoinPage() {
         <div className="slog-join-layout">
           <section className="slog-join-intro">
             <div className="slog-join-logo-wrap">
-              <Image
-                src="/images/slog-logo.png"
-                alt="SLog 로고"
-                width={180}
-                height={60}
-                priority
-                style={{
-                  objectFit: "contain",
-                  height: "auto",
-                }}
-              />
+              <div className="slog-join-logo-box">
+                <Image
+                  src="/images/slog-logo.png"
+                  alt="SLog 로고"
+                  fill
+                  priority
+                  sizes="180px"
+                  style={{
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
             </div>
 
             <h1 className="slog-join-heading">
@@ -28,8 +29,8 @@ export default function JoinPage() {
             </h1>
 
             <p className="slog-join-description">
-              관심 태그를 선택하면 내가 좋아하는 주제의 게시글을 더 쉽게
-              찾아볼 수 있어요.
+              관심 태그를 선택하면 내가 좋아하는 주제의 게시글을 더 쉽게 찾아볼
+              수 있어요.
             </p>
 
             <div className="slog-join-feature-list">

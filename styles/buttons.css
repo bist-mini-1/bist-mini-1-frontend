@@ -1,0 +1,63 @@
+.slog-btn-outline {
+  --bs-btn-color: var(--slog-green);
+  --bs-btn-border-color: var(--slog-green);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--slog-green);
+  --bs-btn-hover-border-color: var(--slog-green);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--slog-green);
+  --bs-btn-active-border-color: var(--slog-green);
+
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slog-btn-write {
+  --bs-btn-color: var(--slog-green);
+  --bs-btn-border-color: var(--slog-green);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-hover-bg: var(--slog-green);
+  --bs-btn-hover-border-color: var(--slog-green);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--slog-green);
+  --bs-btn-active-border-color: var(--slog-green);
+
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slog-btn-write:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(47, 143, 91, 0.18);
+}
+
+.slog-icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--slog-green);
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: var(--slog-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.slog-icon-button:hover {
+  background-color: var(--slog-green);
+  color: #ffffff;
+}
