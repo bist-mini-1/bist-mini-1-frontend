@@ -175,3 +175,11 @@ export const updateInterestTags = async (tagIds) => {
   const res = await axiosInstance.patch("/api/members/me/interest-tags", { tagIds });
   return res.data;
 };
+
+/** 내 프로필 이미지 (BLOB) 조회 */
+export const getMyProfileImage = async () => {
+  const res = await axiosInstance.get("/api/members/me/profile-image", {
+    responseType: "blob",
+  });
+  return res.data;
+};

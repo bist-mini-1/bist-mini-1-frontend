@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getMyProfile, getFollowCount } from "../../api/mypageApi";
+import { getMyProfile, getFollowCount, getMyProfileImage } from "../../api/mypageApi";
+import { getBackendAbsoluteUrl } from "../../utils/urlUtils";
 import { getMemberIdFromToken } from "../../utils/tokenUtils";
 
 const NAV = [
@@ -27,45 +28,56 @@ export default function MyPageLayout({ children }) {
     // 팔로워/팔로잉 수 조회 + 초기 닉네임/아바타 세팅
     const init = async () => {
       setNickname(localStorage.getItem("nickname") || "");
-      setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
-
-      // memberId: localStorage → JWT 토큰 순으로 취득
-      let memberId = localStorage.getItem("memberId");
-      if (!memberId) {
-        memberId = getMemberIdFromToken(token);
-        if (memberId) localStorage.setItem("memberId", memberId);
+      try {
+        const blob = await getMyProfileImage();
+        setAvatarUrl(URL.createObjectURL(blob));
+      } catch (e) {
+        setAvatarUrl(null);
       }
 
-      // getMyProfile()이 실패해도 팔로우 수는 토큰 기반으로 조회
-      if (memberId) {
+      const mid = getMemberIdFromToken(token);
+      if (mid) {
         try {
-          const counts = await getFollowCount(memberId);
+          const counts = await getFollowCount(mid);
           if (counts) setFollowCount(counts);
         } catch {
           // 조회 실패 시 기본값 유지
         }
       }
 
+      try {
+        const blob = await getMyProfileImage();
+        setAvatarUrl(URL.createObjectURL(blob));
+      } catch (e) {
+        setAvatarUrl(null);
+      }
+
       // 프로필 정보 추가 동기화 (실패해도 무시)
       try {
-        const profile = await getMyProfile();
-        if (profile?.memberId) {
-          localStorage.setItem("memberId", String(profile.memberId));
-        }
+        await getMyProfile();
       } catch {
         // 무시
       }
     };
     init();
 
+    const fetchImg = async () => {
+      try {
+        const blob = await getMyProfileImage();
+        setAvatarUrl(URL.createObjectURL(blob));
+      } catch (e) {
+        setAvatarUrl(null);
+      }
+    };
+
     const sync = () => {
       setNickname(localStorage.getItem("nickname") || "");
-      setAvatarUrl(localStorage.getItem("profileImageUrl") || null);
+      fetchImg();
     };
 
     // 팔로우 상태 변경 시 숫자 다시 불러오기
     const handleFollowChange = async () => {
-      const mid = localStorage.getItem("memberId") || getMemberIdFromToken(token);
+      const mid = getMemberIdFromToken(token);
       if (mid) {
         try {
           const counts = await getFollowCount(mid);
@@ -98,14 +110,20 @@ export default function MyPageLayout({ children }) {
       }}>
         {/* 프로필 요약 */}
         <div style={{ padding: "28px 20px 20px", textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="프로필"
-              style={{ width: 58, height: 58, borderRadius: "50%", objectFit: "cover", border: "2.5px solid rgba(255,255,255,0.5)", marginBottom: 10, display: "block", margin: "0 auto 10px" }} />
-          ) : (
-            <div style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "white", margin: "0 auto 10px", border: "2.5px solid rgba(255,255,255,0.4)" }}>
-              {nickname ? nickname.charAt(0).toUpperCase() : "U"}
-            </div>
-          )}
+          <div style={{ width: 58, height: 58, borderRadius: "50%", overflow: "hidden", border: "2.5px solid rgba(255,255,255,0.5)", marginBottom: 10, margin: "0 auto 10px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt="프로필"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                onError={() => setAvatarUrl(null)}
+              />
+            ) : (
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "white" }}>
+                {nickname ? nickname.charAt(0).toUpperCase() : "U"}
+              </div>
+            )}
+          </div>
           <div style={{ color: "white", fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
             {nickname || "사용자"}
           </div>

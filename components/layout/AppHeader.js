@@ -5,10 +5,35 @@ import { useRouter } from "next/navigation";
 import useAuth from "../../hooks/useAuth";
 import Image from "next/image";
 import NotificationBell from "../notification/NotificationBell";
+import { getBackendAbsoluteUrl } from "../../utils/urlUtils";
+import { getMyProfileImage } from "../../api/mypageApi";
+import { useEffect, useState } from "react";
 
 export default function AppHeader() {
   const router = useRouter();
   const { authInfo, logoutAuth } = useAuth();
+  const [profileImgUrl, setProfileImgUrl] = useState(null);
+
+  useEffect(() => {
+    const fetchImg = async () => {
+      if (authInfo.isLogin) {
+        try {
+          const blob = await getMyProfileImage();
+          const url = URL.createObjectURL(blob);
+          setProfileImgUrl(url);
+        } catch (e) {
+          setProfileImgUrl(null);
+        }
+      } else {
+        setProfileImgUrl(null);
+      }
+    };
+
+    fetchImg();
+
+    window.addEventListener("authChanged", fetchImg);
+    return () => window.removeEventListener("authChanged", fetchImg);
+  }, [authInfo.isLogin]);
 
   const handleLogout = () => {
     logoutAuth();
@@ -60,6 +85,7 @@ export default function AppHeader() {
                     width: "36px",
                     height: "36px",
                     borderRadius: "50%",
+                    overflow: "hidden",
                     background: "#198754",
                     color: "white",
                     display: "flex",
@@ -70,9 +96,34 @@ export default function AppHeader() {
                     boxShadow: "0 2px 6px rgba(25,135,84,0.3)",
                   }}
                 >
-                  {authInfo.nickname
-                    ? authInfo.nickname.charAt(0).toUpperCase()
-                    : "U"}
+                    {profileImgUrl ? (
+                      <img
+                        src={profileImgUrl}
+                        alt="프로필"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                        onError={(e) => {
+                          setProfileImgUrl(null);
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {authInfo.nickname
+                          ? authInfo.nickname.charAt(0).toUpperCase()
+                          : "U"}
+                      </div>
+                    )}
                 </div>
               </button>
 

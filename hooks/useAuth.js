@@ -65,7 +65,6 @@ export default function useAuth() {
   const loginAuth = (data) => {
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("nickname", data.nickname || "");
-    if (data.memberId) localStorage.setItem("memberId", String(data.memberId));
 
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
   };
@@ -73,7 +72,6 @@ export default function useAuth() {
   const logoutAuth = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("nickname");
-    localStorage.removeItem("memberId");
 
     window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
   };
