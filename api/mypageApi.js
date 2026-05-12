@@ -112,23 +112,6 @@ export const getFollowCount = async (memberId) => {
 };
 
 /**
-<<<<<<< HEAD
- * 특정 멤버 프로필 조회 (로그인 필요 X) → { memberId, loginId, nickname, bio, profileImageUrl, isFollowing }
- * @param {number} memberId
- */
-export const getMemberProfile = async (memberId) => {
-  const res = await axiosInstance.get(`/api/members/${memberId}`);
-  return res.data.data;
-};
-
-/**
- * 팔로우/언팔로우 토글 → { data: true = 팔로우됨, false = 언팔로우됨 }
- * @param {number} memberId
- */
-export const toggleFollowMember = async (memberId) => {
-  const res = await axiosInstance.post(`/api/follows/${memberId}`);
-  return res.data.data; // boolean
-=======
  * 팔로워 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
  * @param {number} memberId
  */
@@ -191,5 +174,4 @@ export const getMyInterestTags = async () => {
 export const updateInterestTags = async (tagIds) => {
   const res = await axiosInstance.patch("/api/members/me/interest-tags", { tagIds });
   return res.data;
->>>>>>> cad9fae36596fa0ff3044839b7205595c5aeb05f
 };
