@@ -1,10 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useRef, useState } from "react";
+import { uploadFiles } from "@/api/fileApi";
+
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
+  ssr: false,
+  loading: () => <div className="alert alert-info mb-0">에디터 로드 중...</div>,
+});
+
+const getBackendAbsoluteUrl = (relativePath) => {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return `${process.env.NEXT_PUBLIC_API_BASE_URL}${relativePath}`;
+  }
+
+  // 브라우저 환경일 때만 현재 호스트 주소를 사용
+  if (typeof window !== "undefined" && window.location) {
+    const hostname = window.location.hostname;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+      return `http://${hostname}:8080${relativePath}`;
+    }
+  }
+
+  // 기본값 (로컬 개발 시)
+  return `http://localhost:8080${relativePath}`;
+};
 
 const emptyForm = {
   title: "",
-  content: "",
   tags: "",
   thumbnail: "",
   isPublic: "Y",
@@ -12,7 +35,6 @@ const emptyForm = {
 
 const toFormValues = (initialValues) => ({
   title: initialValues?.title ?? "",
-  content: initialValues?.content ?? "",
   tags: Array.isArray(initialValues?.tags)
     ? initialValues.tags
         .map((tag) => {
@@ -27,6 +49,7 @@ const toFormValues = (initialValues) => ({
     : initialValues?.tags ?? "",
   thumbnail: initialValues?.thumbnail ?? initialValues?.thumbnailUrl ?? "",
   isPublic: initialValues?.isPublic ?? initialValues?.is_public ?? "Y",
+  content: initialValues?.content ?? "",
 });
 
 export default function PostForm({
@@ -42,12 +65,11 @@ export default function PostForm({
   tempLabel = "임시 저장",
   cancelLabel = "작성 취소",
 }) {
-  const [form, setForm] = useState(emptyForm);
+  const imageInputRef = useRef(null);
+  const [form, setForm] = useState(() => toFormValues(initialValues));
+  const [content, setContent] = useState(() => initialValues?.content ?? "");
   const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    setForm(toFormValues(initialValues));
-  }, [initialValues]);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -63,6 +85,56 @@ export default function PostForm({
     }));
   };
 
+  const insertUploadedImage = async (file) => {
+    if (!file) {
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const uploadResponse = await uploadFiles([file], "IMAGE");
+      let imageUrl = uploadResponse?.[0]?.fileUrl;
+
+      if (!imageUrl) {
+        throw new Error("이미지 업로드 응답에 fileUrl이 없습니다.");
+      }
+
+      // 상대 경로를 절대 경로로 변환 (백엔드 호스트 포함)
+      if (imageUrl.startsWith("/api/attachments")) {
+        imageUrl = getBackendAbsoluteUrl(imageUrl);
+      }
+
+      const altText = file.name?.replace(/\.[^.]+$/, "") || "image";
+      const imageMarkdown = `![${altText}](${imageUrl})`;
+
+      setContent((current) => {
+        if (!current.trim()) {
+          return imageMarkdown;
+        }
+
+        return `${current.trimEnd()}\n\n${imageMarkdown}`;
+      });
+    } catch (error) {
+      console.error("Image upload error:", error);
+      alert("이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleImageInputChange = async (event) => {
+    const file = event.target.files?.[0];
+    await insertUploadedImage(file);
+  };
+
+  const openImagePicker = () => {
+    imageInputRef.current?.click();
+  };
+
   const validate = () => {
     const nextErrors = {};
 
@@ -72,7 +144,7 @@ export default function PostForm({
       nextErrors.title = "제목은 200자 이내로 입력해주세요.";
     }
 
-    if (!form.content.trim()) {
+    if (!content.trim()) {
       nextErrors.content = "내용을 입력해주세요.";
     }
 
@@ -100,7 +172,7 @@ export default function PostForm({
 
     const payload = {
       title: form.title.trim(),
-      content: form.content.trim(),
+      content: content.trim(),
       is_public: form.isPublic,
       is_temp: isTemp ? "Y" : "N",
       tags: form.tags
@@ -142,16 +214,49 @@ export default function PostForm({
           </div>
 
           <div className="col-12">
-            <label className="form-label fw-semibold">내용</label>
-            <textarea
-              name="content"
-              className={`form-control ${errors.content ? "is-invalid" : ""}`}
-              rows={12}
-              placeholder="게시글 내용을 입력하세요"
-              value={form.content}
-              onChange={handleChange}
-            />
-            {errors.content && <div className="invalid-feedback d-block">{errors.content}</div>}
+            <label className="form-label fw-semibold">내용 (마크다운)</label>
+            <div className={`post-editor-shell ${errors.content ? "is-invalid" : ""}`}>
+              <div className="post-editor-toolbar">
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="d-none"
+                  onChange={handleImageInputChange}
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={openImagePicker}
+                  disabled={uploading}
+                >
+                  이미지 삽입
+                </button>
+              </div>
+
+              <div data-color-mode="light">
+                <MDEditor
+                  value={content}
+                  onChange={(value) => {
+                    setContent(value ?? "");
+
+                    if (errors.content) {
+                      setErrors((current) => ({
+                        ...current,
+                        content: "",
+                      }));
+                    }
+                  }}
+                  height={420}
+                  preview="live"
+                  textareaProps={{
+                    placeholder: "게시글 내용을 입력하세요",
+                  }}
+                />
+              </div>
+            </div>
+            {errors.content && <div className="invalid-feedback d-block" style={{ display: "block" }}>{errors.content}</div>}
+            {uploading && <div className="form-text text-info">이미지 업로드 중...</div>}
           </div>
 
           <div className="col-12 col-lg-6">
@@ -202,15 +307,15 @@ export default function PostForm({
 
       <div className="card-footer bg-white border-0 p-4 pt-0">
         <div className="d-flex flex-wrap gap-2 justify-content-end">
-          <button type="button" className="btn btn-outline-secondary px-4" disabled={submitting} onClick={onCancel}>
+          <button type="button" className="btn btn-outline-secondary px-4" disabled={submitting || uploading} onClick={onCancel}>
             {cancelLabel}
           </button>
           {showTempSave && (
-            <button type="button" className="btn btn-outline-success px-4" disabled={submitting} onClick={() => handleSubmit(true)}>
+            <button type="button" className="btn btn-outline-success px-4" disabled={submitting || uploading} onClick={() => handleSubmit(true)}>
               {tempLabel}
             </button>
           )}
-          <button type="button" className="btn btn-success px-4" disabled={submitting} onClick={() => handleSubmit(false)}>
+          <button type="button" className="btn btn-success px-4" disabled={submitting || uploading} onClick={() => handleSubmit(false)}>
             {submitLabel}
           </button>
         </div>

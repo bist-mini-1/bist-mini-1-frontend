@@ -3,6 +3,8 @@ import BootstrapClient from "../components/layout/BootstrapClient";
 import AppHeader from "../components/layout/AppHeader";
 import ChatWidget from "../components/chat/ChatWidget";
 import "./globals.css";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
 
 import "@/styles/buttons.css";
 import "@/styles/home.css";

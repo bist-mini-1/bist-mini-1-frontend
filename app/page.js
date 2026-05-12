@@ -133,7 +133,7 @@ export default function Home() {
             <SearchBox onSearch={handleSearch} searchKeyword={searchKeyword} />
           </div>
 
-          <Link href="/posts/write" className="btn slog-btn-write">
+          <Link href="/post/PostWrite" className="btn slog-btn-write">
             새 글 작성
           </Link>
         </div>
