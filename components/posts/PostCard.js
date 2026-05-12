@@ -7,8 +7,18 @@ import { formatDate } from "@/utils/formatDate";
 import { togglePostLike, togglePostBookmark } from "@/api/postApi";
 import useAuth from "@/hooks/useAuth";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
+
+const stripMarkdown = (text) => {
+  if (!text) return "";
+  return text
+    .replace(/!\[.*?\]\(.*?\)/g, "") // 이미지 제거
+    .replace(/\[.*?\]\(.*?\)/g, "") // 링크 제거
+    .replace(/[#*`~_>]/g, "") // 마크다운 기호 제거
+    .replace(/\s+/g, " ") // 공백 정리
+    .trim();
+};
+
 
 export default function PostCard({ post, onLikeChanged }) {
   const router = useRouter();
@@ -22,11 +32,7 @@ export default function PostCard({ post, onLikeChanged }) {
   const likeCount = post.likeCount ?? 0;
 
   const detailUrl = `/post/${post.postId}`;
-  const thumbnailSrc = post.thumbnailUrl
-    ? post.thumbnailUrl.startsWith("http")
-      ? post.thumbnailUrl
-      : `${API_BASE_URL}${post.thumbnailUrl}`
-    : null;
+  const thumbnailSrc = post.thumbnailUrl ? getBackendAbsoluteUrl(post.thumbnailUrl) : null;
 
   const handleCardClick = () => {
     router.push(detailUrl);
@@ -183,7 +189,7 @@ export default function PostCard({ post, onLikeChanged }) {
         </h5>
 
         <p className="card-text text-muted small slog-post-preview">
-          {post.contentPreview || "내용 미리보기가 없습니다."}
+          {stripMarkdown(post.contentPreview) || "내용 미리보기가 없습니다."}
         </p>
 
         <div className="text-muted small slog-post-meta">

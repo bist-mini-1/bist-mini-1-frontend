@@ -160,6 +160,9 @@
   overflow: hidden;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(17, 24, 39, 0.05);
+  
+  /* 에디터 폰트 불일치로 인한 커서 밀림 방지 */
+  --w-md-editor-font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important;
 }
 
 .post-editor-shell.is-invalid {
@@ -181,15 +184,18 @@
 
 .post-editor-shell .w-md-editor-text-pre,
 .post-editor-shell .w-md-editor-text-input,
-.post-editor-shell .w-md-editor-text {
-  font-size: 0.98rem;
-  line-height: 1.75;
+.post-editor-shell .w-md-editor-text,
+.post-editor-shell .w-md-editor-text * {
+  font-family: var(--w-md-editor-font-family) !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
 }
 
 .post-markdown-body {
   color: #1f2937;
   line-height: 1.85;
   word-break: break-word;
+  text-align: left; /* 좌측 정렬 명시 */
 }
 
 .post-markdown-body h1,
@@ -210,9 +216,9 @@
 
 .post-markdown-body img {
   display: block;
-  max-width: 100%;
+  width: 100%; /* 너비 꽉 채우기 */
   height: auto;
-  margin: 1rem auto;
+  margin: 1.5rem 0; /* 좌측 정렬 및 간격 조정 */
   border-radius: 18px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }

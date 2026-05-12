@@ -4,33 +4,19 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-const getBackendAbsoluteUrl = (relativePath) => {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return `${process.env.NEXT_PUBLIC_API_BASE_URL}${relativePath}`;
-  }
+import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
 
-  // 브라우저 환경일 때만 현재 호스트 주소를 사용
-  if (typeof window !== "undefined" && window.location) {
-    const hostname = window.location.hostname;
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `http://${hostname}:8080${relativePath}`;
-    }
-  }
-
-  // 기본값 (로컬 개발 시)
-  return `http://localhost:8080${relativePath}`;
-};
 
 function getAuthorDisplayName(post) {
   const authorName =
+    post?.nickname ||
+    post?.writerNickname ||
+    post?.authorNickname ||
     post?.loginId ||
     post?.writerLoginId ||
     post?.authorLoginId ||
     post?.writerId ||
-    post?.authorId ||
-    post?.nickname ||
-    post?.writerNickname ||
-    post?.authorNickname;
+    post?.authorId;
 
   if (authorName) {
     return authorName;
@@ -148,6 +134,9 @@ export default function PostDetailView({
   likeLoading,
   onLikeClick,
   onShareClick,
+  bookmarked,
+  bookmarkLoading,
+  onBookmarkClick,
   currentMemberId,
   canEdit,
   actionMenuRef,
@@ -189,6 +178,19 @@ export default function PostDetailView({
 
               <button
                 type="button"
+                className={`post-detail-action-button ${bookmarked ? "is-active" : ""}`}
+                onClick={onBookmarkClick}
+                disabled={bookmarkLoading}
+                aria-pressed={bookmarked}
+                aria-label="스크랩"
+              >
+                <span className="post-detail-action-icon">
+                  <i className={`bi ${bookmarked ? "bi-bookmark-fill" : "bi-bookmark"}`} />
+                </span>
+              </button>
+
+              <button
+                type="button"
                 className="post-detail-action-button"
                 onClick={onShareClick}
                 aria-label="공유"
@@ -208,7 +210,9 @@ export default function PostDetailView({
 
               <div className="post-detail-info-row">
                 <div className="post-detail-author-row">
-                  <span className="post-detail-author-name">{getAuthorDisplayName(post)}</span>
+                  <Link href={`/Mypage/user/${post?.memberId}`} className="post-detail-author-name">
+                    {getAuthorDisplayName(post)}
+                  </Link>
                   <span className="post-detail-separator">·</span>
                   <span>{displayDate}</span>
                   <span className="post-detail-separator">·</span>
@@ -262,26 +266,28 @@ export default function PostDetailView({
       {post ? (
         <section className="post-author-section">
           <div className="post-author-card">
-            {authorProfile?.profileImageUrl && String(authorProfile.profileImageUrl).trim() ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={
-                  authorProfile.profileImageUrl.startsWith("http")
-                    ? authorProfile.profileImageUrl
-                    : getBackendAbsoluteUrl(authorProfile.profileImageUrl)
-                }
-                alt={authorProfile.nickname || getAuthorDisplayName(post)}
-                className="post-author-avatar"
-              />
-            ) : (
-              <div className="post-author-avatar post-author-avatar-placeholder">👤</div>
-            )}
+            <Link href={`/Mypage/user/${post?.memberId}`} className="post-author-avatar-link">
+              {authorProfile?.profileImageUrl && String(authorProfile.profileImageUrl).trim() ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={
+                    authorProfile.profileImageUrl.startsWith("http")
+                      ? authorProfile.profileImageUrl
+                      : getBackendAbsoluteUrl(authorProfile.profileImageUrl)
+                  }
+                  alt={authorProfile.nickname || getAuthorDisplayName(post)}
+                  className="post-author-avatar"
+                />
+              ) : (
+                <div className="post-author-avatar post-author-avatar-placeholder">👤</div>
+              )}
+            </Link>
 
             <div className="post-author-body">
-              <div className="post-author-headline">
+              <Link href={`/Mypage/user/${post?.memberId}`} className="post-author-headline">
                 <h3 className="post-author-name">{authorProfile?.nickname || getAuthorDisplayName(post)}</h3>
                 <p className="post-author-login">{authorProfile?.loginId || "-"}</p>
-              </div>
+              </Link>
 
               {authorProfile?.bio ? <p className="post-author-bio">{authorProfile.bio}</p> : null}
 
