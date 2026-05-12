@@ -4,6 +4,13 @@ import AppHeader from "../components/layout/AppHeader";
 import ChatWidget from "../components/chat/ChatWidget";
 import "./globals.css";
 
+import "@/styles/buttons.css";
+import "@/styles/home.css";
+import "@/styles/pagination.css";
+import "@/styles/search.css";
+import "@/styles/auth.css";
+import "@/styles/post.css";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
