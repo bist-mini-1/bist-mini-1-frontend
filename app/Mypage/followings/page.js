@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getFollowings, unfollowUser } from "../../../api/mypageApi";
 import { getMemberIdFromToken } from "../../../utils/tokenUtils";
+import Pagination from "../../../components/common/Pagination";
 
 const GREEN      = "#3cb878";
 const GREEN_DARK = "#2e7d32";
+const PAGE_SIZE  = 10;
 
 export default function FollowingsPage() {
   const router = useRouter();
@@ -16,6 +18,8 @@ export default function FollowingsPage() {
   const [error,   setError]   = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [toast,   setToast]   = useState(null);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [page,          setPage]          = useState(1);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -69,6 +73,28 @@ export default function FollowingsPage() {
     setToast({ msg, isError });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const handleSearchChange = (e) => {
+    setSearchKeyword(e.target.value);
+    setPage(1);
+  };
+
+  const handleClear = () => {
+    setSearchKeyword("");
+    setPage(1);
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // 실시간 검색 필터링 + 페이지네이션
+  const filteredUsers = users.filter((u) =>
+    !searchKeyword.trim() || u.nickname.toLowerCase().includes(searchKeyword.trim().toLowerCase())
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const pagedUsers = filteredUsers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div>
@@ -131,15 +157,55 @@ export default function FollowingsPage() {
         <p style={{ fontSize: 13, color: "#888", margin: "6px 0 0" }}>내가 팔로우하는 사람들이에요</p>
       </div>
 
+      {/* ── 검색 박스 ── */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{
+          display: "flex", alignItems: "center",
+          background: "white", border: "1.5px solid #e9ecef",
+          borderRadius: 10, padding: "8px 14px", gap: 8,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+        }}>
+          <i className="bi bi-search" style={{ color: "#aaa", fontSize: 14 }} />
+          <input
+            type="text"
+            value={searchKeyword}
+            onChange={handleSearchChange}
+            placeholder="닉네임으로 검색"
+            style={{ flex: 1, border: "none", outline: "none", fontSize: 13, color: "#333", background: "transparent" }}
+          />
+          {searchKeyword && (
+            <button type="button" onClick={handleClear}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#aaa", padding: 0, fontSize: 14 }}>
+              <i className="bi bi-x-lg" />
+            </button>
+          )}
+        </div>
+        {searchKeyword && (
+          <p style={{ fontSize: 12, color: "#888", margin: "8px 0 0" }}>
+            <strong style={{ color: "#333" }}>"{searchKeyword}"</strong> 검색 결과{" "}
+            <strong style={{ color: GREEN }}>{filteredUsers.length}</strong>명
+          </p>
+        )}
+      </div>
+
       {loading ? <SkeletonList />
         : error ? <ErrorState message={error} />
-        : users.length === 0 ? <EmptyState text="아직 팔로우한 사람이 없어요" sub="관심 있는 사람을 팔로우해 보세요!" />
+        : filteredUsers.length === 0 ? (
+            searchKeyword
+              ? <EmptyState text="검색 결과가 없어요" sub={`"${searchKeyword}"와 일치하는 팔로잉이 없습니다.`} />
+              : <EmptyState text="아직 팔로우한 사람이 없어요" sub="관심 있는 사람을 팔로우해 보세요!" />
+          )
         : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {users.map((user) => (
-              <UserCard key={user.memberId} user={user} onUnfollowClick={handleUnfollowClick} />
-            ))}
-          </div>
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {pagedUsers.map((user) => (
+                <UserCard key={user.memberId} user={user} onUnfollowClick={handleUnfollowClick} />
+              ))}
+            </div>
+            <div style={{ marginTop: 20 }}>
+              <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+            </div>
+          </>
         )
       }
     </div>
