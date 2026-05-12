@@ -1,10 +1,8 @@
-'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
-import { getMessageHistory, markAsRead } from '@/api/chatApi';
+import { getMessageHistory, markAsRead, updateMessage, deleteMessage } from '@/api/chatApi';
 
 /**
  * 실시간 채팅 대화창 컴포넌트
@@ -17,9 +15,21 @@ const ChatWindow = ({ room }) => {
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   
+  // 수정 관련 상태
+  const [editingId, setEditingId] = useState(null);
+  const [editContent, setEditContent] = useState('');
+  const [activeMenuId, setActiveMenuId] = useState(null);
+  
   const scrollRef = useRef(null);
   const stompClient = useRef(null);
   const messagesEndRef = useRef(null);
+
+  // 메뉴 팝업 닫기 처리
+  useEffect(() => {
+    const handleOutsideClick = () => setActiveMenuId(null);
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   // 스크롤 하단 이동 (최초 로드 또는 내 메시지 전송 시)
   const scrollToBottom = () => {
@@ -45,13 +55,11 @@ const ChatWindow = ({ room }) => {
         setMessages(reversedHistory);
         setTimeout(scrollToBottom, 50);
       } else {
-        // 과거 내역 추가 시 스크롤 위치 보존 로직
         const scrollContainer = scrollRef.current;
         const previousScrollHeight = scrollContainer.scrollHeight;
         
         setMessages((prev) => [...reversedHistory, ...prev]);
         
-        // 데이터 렌더링 후 스크롤 위치 보정
         requestAnimationFrame(() => {
           if (scrollContainer) {
             const newScrollHeight = scrollContainer.scrollHeight;
@@ -98,22 +106,24 @@ const ChatWindow = ({ room }) => {
           const data = JSON.parse(message.body);
           
           if (data.messageType === 'READ') {
-            // 누군가 읽었을 때 (상대방이 내 메시지를 읽었을 때)
             setMessages((prev) => 
               prev.map((m) => {
-                // 내 메시지이면서 읽은 시간보다 이전에 보낸 것이면 읽음 처리
                 if (m.senderId !== data.senderId && new Date(m.createdAt) <= new Date(data.createdAt)) {
                   return { ...m, unreadCount: 0 };
                 }
                 return m;
               })
             );
+          } else if (data.messageType === 'UPDATE') {
+            setMessages((prev) => 
+              prev.map((m) => m.messageId === data.messageId ? { ...m, ...data } : m)
+            );
+          } else if (data.messageType === 'DELETE') {
+            // 하드 삭제 대비 (필요시)
+            setMessages((prev) => prev.filter((m) => m.messageId !== data.messageId));
           } else {
-            // 일반 메시지 수신
             setMessages((prev) => [...prev, data]);
             setTimeout(scrollToBottom, 50);
-            
-            // 내가 방에 있는 상태에서 메시지를 받으면 바로 읽음 처리 API 호출
             if (data.senderId !== Number(localStorage.getItem('memberId'))) {
               handleMarkAsRead();
             }
@@ -135,7 +145,6 @@ const ChatWindow = ({ room }) => {
   const handleMarkAsRead = async () => {
     try {
       await markAsRead(room.roomId);
-      // 읽음 처리 후 전역 카운트 갱신 유도
       window.dispatchEvent(new CustomEvent('chatUnreadChanged'));
     } catch (error) {
       console.error("읽음 처리 실패:", error);
@@ -169,8 +178,46 @@ const ChatWindow = ({ room }) => {
     setInputValue('');
   };
 
+  // 메시지 수정 시작
+  const startEditing = (msg) => {
+    setEditingId(msg.messageId);
+    setEditContent(msg.content);
+    setActiveMenuId(null);
+  };
+
+  // 메시지 수정 취소
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditContent('');
+  };
+
+  // 메시지 수정 완료
+  const submitEdit = async () => {
+    if (!editContent.trim()) return;
+    try {
+      await updateMessage(editingId, editContent);
+      setEditingId(null);
+      setEditContent('');
+    } catch (error) {
+      console.error("메시지 수정 실패:", error);
+      alert("메시지 수정 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 메시지 삭제
+  const handleDelete = async (messageId) => {
+    if (!confirm("메시지를 삭제하시겠습니까?")) return;
+    try {
+      await deleteMessage(messageId);
+      setActiveMenuId(null);
+    } catch (error) {
+      console.error("메시지 삭제 실패:", error);
+      alert("메시지 삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   return (
-    <div className="d-flex flex-column h-100 bg-light">
+    <div className="d-flex flex-column h-100 bg-light position-relative">
       {/* 메시지 출력 영역 */}
       <div 
         className="flex-grow-1 overflow-auto p-3" 
@@ -184,7 +231,9 @@ const ChatWindow = ({ room }) => {
             </div>
           )}
           {messages.map((msg, index) => {
-            const isMine = msg.senderId === memberId;
+            const isMine = msg.senderId === memberId || msg.isMine;
+            const isEditing = editingId === msg.messageId;
+
             return (
               <div key={msg.messageId || index} className={`d-flex ${isMine ? 'justify-content-end' : 'justify-content-start'}`}>
                 {!isMine && (
@@ -195,28 +244,90 @@ const ChatWindow = ({ room }) => {
                       className="rounded-circle" 
                       fill
                       style={{ objectFit: 'cover' }} 
+                      sizes="30px"
                     />
                   </div>
                 )}
-                <div style={{ maxWidth: '75%' }}>
+                <div style={{ maxWidth: '80%', position: 'relative' }}>
                   {!isMine && <div className="ms-1 mb-1 text-muted" style={{ fontSize: '11px' }}>{msg.senderNickname}</div>}
-                  <div 
-                    className={`p-2 px-3 rounded-3 shadow-sm ${isMine ? 'bg-success text-white' : 'bg-white'}`}
-                    style={{ 
-                      fontSize: '14px', 
-                      borderRadius: isMine ? '15px 15px 0 15px !important' : '15px 15px 15px 0 !important',
-                      wordBreak: 'break-all'
-                    }}
-                  >
-                    {msg.content}
-                  </div>
-                  <div className={`mt-1 d-flex align-items-center ${isMine ? 'justify-content-end' : 'justify-content-start'}`} style={{ fontSize: '10px' }}>
-                    {isMine && msg.unreadCount > 0 && (
-                      <span className="text-warning fw-bold me-1" style={{ fontSize: '11px' }}>1</span>
+                  
+                  <div className="d-flex align-items-end gap-1">
+                    {/* 내 메시지일 때 시간 표시 (왼쪽) */}
+                    {isMine && !isEditing && (
+                      <div className="d-flex flex-column align-items-end" style={{ fontSize: '10px', minWidth: '40px' }}>
+                        {msg.unreadCount > 0 && <span className="text-warning fw-bold" style={{ fontSize: '11px' }}>1</span>}
+                        <span className="text-muted">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
                     )}
-                    <span className="text-muted">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+
+                    <div className="position-relative">
+                      {isEditing ? (
+                        <div className="d-flex flex-column gap-1 bg-white p-2 rounded shadow-sm border border-success">
+                          <textarea 
+                            className="form-control form-control-sm border-0 p-0"
+                            style={{ resize: 'none', minWidth: '200px', fontSize: '14px' }}
+                            rows="2"
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            autoFocus
+                          />
+                          <div className="d-flex justify-content-end gap-2">
+                            <button className="btn btn-link text-muted p-0 text-decoration-none" style={{ fontSize: '12px' }} onClick={cancelEditing}>취소</button>
+                            <button className="btn btn-link text-success p-0 text-decoration-none fw-bold" style={{ fontSize: '12px' }} onClick={submitEdit}>수정</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          className={`p-2 px-3 rounded-3 shadow-sm ${msg.isDeleted ? (isMine ? 'bg-success text-white-50' : 'bg-light text-muted') : (isMine ? 'bg-success text-white' : 'bg-white')}`}
+                          onContextMenu={(e) => {
+                            if (isMine && !msg.isDeleted) {
+                              e.preventDefault();
+                              setActiveMenuId(msg.messageId);
+                            }
+                          }}
+                          onClick={(e) => {
+                            if (isMine && !msg.isDeleted) {
+                              e.stopPropagation();
+                              setActiveMenuId(activeMenuId === msg.messageId ? null : msg.messageId);
+                            }
+                          }}
+                          style={{ 
+                            fontSize: '14px', 
+                            borderRadius: isMine ? '15px 15px 0 15px !important' : '15px 15px 15px 0 !important',
+                            wordBreak: 'break-all',
+                            cursor: isMine && !msg.isDeleted ? 'pointer' : 'default',
+                            fontStyle: msg.isDeleted ? 'italic' : 'normal'
+                          }}
+                        >
+                          {msg.isDeleted ? '삭제된 메시지입니다.' : msg.content}
+                        </div>
+                      )}
+
+                      {/* 수정/삭제 메뉴 */}
+                      {activeMenuId === msg.messageId && isMine && !isEditing && !msg.isDeleted && (
+                        <div 
+                          className="position-absolute bg-white border rounded shadow-sm py-1"
+                          style={{ 
+                            top: '100%', 
+                            right: 0, 
+                            zIndex: 10, 
+                            minWidth: '80px',
+                            marginTop: '5px'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="px-3 py-1 text-dark" style={{ cursor: 'pointer', fontSize: '13px' }} onClick={() => startEditing(msg)}>수정</div>
+                          <div className="px-3 py-1 text-danger" style={{ cursor: 'pointer', fontSize: '13px' }} onClick={() => handleDelete(msg.messageId)}>삭제</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 상대방 메시지일 때 시간 표시 (오른쪽) */}
+                    {!isMine && (
+                      <div className="d-flex flex-column" style={{ fontSize: '10px', minWidth: '40px' }}>
+                        <span className="text-muted">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -227,34 +338,32 @@ const ChatWindow = ({ room }) => {
       </div>
 
       {/* 메시지 입력 영역 */}
-      <form className="p-3 bg-white border-top d-flex align-items-center gap-2" onSubmit={handleSendMessage}>
-        <input 
-          type="text" 
-          className="form-control border-0 bg-light rounded-pill px-3"
-          placeholder="메시지를 입력하세요..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          style={{ height: '40px' }}
-        />
-        <button className="btn btn-success rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" 
-                type="submit"
-                style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  minWidth: '40px',
-                  background: 'var(--slog-green-gradient, #28a745)',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-          <i className="bi bi-send-fill" style={{ 
-            fontSize: '18px', 
-            transform: 'translate(-1px, 1px)', // 시각적 중앙 보정
-            lineHeight: 1 
-          }}></i>
-        </button>
-      </form>
+      {!editingId && (
+        <form className="p-3 bg-white border-top d-flex align-items-center gap-2" onSubmit={handleSendMessage}>
+          <input 
+            type="text" 
+            className="form-control border-0 bg-light rounded-pill px-3"
+            placeholder="메시지를 입력하세요..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            style={{ height: '40px' }}
+          />
+          <button className="btn btn-success rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" 
+                  type="submit"
+                  style={{ 
+                    width: '40px', 
+                    height: '40px', 
+                    minWidth: '40px',
+                    background: 'var(--slog-green-gradient, #28a745)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+            <i className="bi bi-send-fill" style={{ fontSize: '18px', transform: 'translate(-1px, 1px)', lineHeight: 1 }}></i>
+          </button>
+        </form>
+      )}
     </div>
   );
 };

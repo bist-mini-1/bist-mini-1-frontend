@@ -7,7 +7,7 @@ import { updateComment, deleteComment, createComment, checkIsMyComment, toggleCo
 import useAuth from "@/hooks/useAuth";
 import Image from "next/image";
 
-function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId, isNew, newCommentId }) {
+function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId, isNew, newCommentId, isBest }) {
   const { authInfo } = useAuth();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -93,12 +93,14 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
   };
 
   const itemStyle = {
-    paddingTop: isReply ? "10px" : "24px",
-    paddingBottom: isReply ? "0" : "24px",
-    borderBottom: isReply ? "none" : "1px solid #f1f1f1",
+    paddingTop: isReply ? "10px" : (isBest ? "16px" : "24px"),
+    paddingBottom: isReply ? "0" : (isBest ? "12px" : "24px"),
+    borderBottom: isReply ? "none" : (isBest ? "none" : "1px solid #f1f1f1"),
     marginLeft: isReply ? "48px" : "0",
     opacity: comment.isDeleted === "Y" ? 0.6 : 1,
     position: "relative",
+    backgroundColor: isBest ? "#fcfcfc" : "transparent",
+    borderRadius: isBest ? "12px" : "0",
   };
 
   const headerStyle = {
@@ -203,7 +205,8 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
               alt={comment.nickname || "User"} 
               width={isReply ? 32 : 40} 
               height={isReply ? 32 : 40} 
-              style={{ objectFit: "cover" }} 
+              style={{ objectFit: "cover" }}
+              sizes="(max-width: 768px) 40px, 40px"
             />
           </div>
         </Link>
@@ -212,6 +215,11 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
             <Link href={`/Mypage/user/${comment.memberId}`} className="text-decoration-none text-dark hover-underline">
               {comment.nickname || `User ${comment.memberId}`}
             </Link>
+            {isBest && (
+              <span className="badge rounded-pill text-bg-warning" style={{ fontSize: "10px", padding: "3px 8px", fontWeight: "700", color: "#fff" }}>
+                <i className="bi bi-star-fill me-1"></i> 베스트
+              </span>
+            )}
             {isPostAuthor && (
               <span className="badge rounded-pill text-bg-success" style={{ fontSize: "10px", padding: "3px 8px", fontWeight: "600" }}>
                 작성자
