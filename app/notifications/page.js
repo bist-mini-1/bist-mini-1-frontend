@@ -31,10 +31,9 @@ export default function NotificationsPage() {
       }, 0);
     }
 
-    const handleRefresh = () => {
-      console.log("Page: Notifications changed elsewhere, refreshing list...");
-      void fetchNotifications();
-    };
+const handleRefresh = () => {
+  fetchNotifications();
+};
 
     window.addEventListener("notificationsChanged", handleRefresh);
     return () => {
