@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -100,8 +99,8 @@ export default function MyPageLayout({ children }) {
         {/* 프로필 요약 */}
         <div style={{ padding: "28px 20px 20px", textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
           {avatarUrl ? (
-            <Image src={avatarUrl} alt="프로필" width={58} height={58}
-              style={{ borderRadius: "50%", objectFit: "cover", border: "2.5px solid rgba(255,255,255,0.5)", marginBottom: 10 }} />
+            <img src={avatarUrl} alt="프로필"
+              style={{ width: 58, height: 58, borderRadius: "50%", objectFit: "cover", border: "2.5px solid rgba(255,255,255,0.5)", marginBottom: 10, display: "block", margin: "0 auto 10px" }} />
           ) : (
             <div style={{ width: 58, height: 58, borderRadius: "50%", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, color: "white", margin: "0 auto 10px", border: "2.5px solid rgba(255,255,255,0.4)" }}>
               {nickname ? nickname.charAt(0).toUpperCase() : "U"}
