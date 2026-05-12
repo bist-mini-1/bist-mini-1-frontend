@@ -12,7 +12,6 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async () => {
     try {
-      setLoading(true);
       const response = await getNotifications();
       // ApiResponse 규격에 따라 실제 데이터는 .data 안에 있음
       setNotifications(response.data || []);
@@ -24,17 +23,24 @@ export default function NotificationsPage() {
   };
 
   useEffect(() => {
+    let initialFetchTimer = null;
+
     if (authInfo.isLogin) {
-      fetchNotifications();
+      initialFetchTimer = window.setTimeout(() => {
+        void fetchNotifications();
+      }, 0);
     }
 
     const handleRefresh = () => {
       console.log("Page: Notifications changed elsewhere, refreshing list...");
-      fetchNotifications();
+      void fetchNotifications();
     };
 
     window.addEventListener("notificationsChanged", handleRefresh);
     return () => {
+      if (initialFetchTimer !== null) {
+        window.clearTimeout(initialFetchTimer);
+      }
       window.removeEventListener("notificationsChanged", handleRefresh);
     };
   }, [authInfo.isLogin]);

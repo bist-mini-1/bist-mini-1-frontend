@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
+import { Editor as ToastEditor } from "@toast-ui/react-editor";
+import fileApi from "../../api/fileApi";
 
 const emptyForm = {
   title: "",
@@ -29,6 +31,19 @@ const toFormValues = (initialValues) => ({
   isPublic: initialValues?.isPublic ?? initialValues?.is_public ?? "Y",
 });
 
+const getApiBaseUrl = () => {
+  if (typeof window === "undefined") {
+    return "http://127.0.0.1:8080";
+  }
+
+  const { hostname } = window.location;
+  if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+    return `http://${hostname}:8080`;
+  }
+
+  return "http://127.0.0.1:8080";
+};
+
 export default function PostForm({
   initialValues = emptyForm,
   onSubmit,
@@ -44,6 +59,7 @@ export default function PostForm({
 }) {
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState(() => toFormValues(initialValues));
+  const editorRef = useRef(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -59,8 +75,39 @@ export default function PostForm({
     }));
   };
 
-  const validate = () => {
+  const handleEditorChange = () => {
+    const markdown = editorRef.current?.getInstance?.().getMarkdown?.() ?? "";
+
+    setForm((current) => (current.content === markdown ? current : { ...current, content: markdown }));
+    setErrors((current) => ({ ...current, content: "" }));
+  };
+
+  const handleImageBlobHook = async (blob, callback) => {
+    try {
+      const response = await fileApi.uploadTempAttachments([blob], "INLINE_IMAGE");
+      const items = Array.isArray(response) ? response : response?.data ?? [];
+      const item = items[0];
+      if (!item) {
+        throw new Error("이미지 업로드 응답이 비어 있습니다.");
+      }
+
+      const tempId = item.tempId || item.temp_id || item.id;
+      const url = item.fileUrl || item.file_url || item.url || (tempId ? `/api/attachments/temp/${tempId}` : "");
+      if (!url) {
+        throw new Error("이미지 URL을 찾을 수 없습니다.");
+      }
+
+      callback(url.startsWith("http") ? url : `${getApiBaseUrl()}${url}`, item.originalName || item.original_name || "image");
+      setErrors((current) => ({ ...current, content: "" }));
+    } catch (error) {
+      console.error("이미지 업로드 실패:", error);
+      alert("이미지 업로드에 실패했습니다.");
+    }
+  };
+
+  const validate = (content) => {
     const nextErrors = {};
+    const currentContent = content ?? form.content;
 
     if (!form.title.trim()) {
       nextErrors.title = "제목을 입력해주세요.";
@@ -68,7 +115,7 @@ export default function PostForm({
       nextErrors.title = "제목은 200자 이내로 입력해주세요.";
     }
 
-    if (!form.content.trim()) {
+    if (!currentContent.trim()) {
       nextErrors.content = "내용을 입력해주세요.";
     }
 
@@ -90,13 +137,15 @@ export default function PostForm({
   };
 
   const handleSubmit = async (isTemp) => {
-    if (!validate()) {
+    const currentContent = editorRef.current?.getInstance?.().getMarkdown?.() ?? form.content;
+
+    if (!validate(currentContent)) {
       return;
     }
 
     const payload = {
       title: form.title.trim(),
-      content: form.content.trim(),
+      content: currentContent.trim(),
       is_public: form.isPublic,
       is_temp: isTemp ? "Y" : "N",
       tags: form.tags
@@ -154,14 +203,18 @@ export default function PostForm({
 
           <div className="col-12">
             <label className="form-label fw-semibold">내용</label>
-            <textarea
-              name="content"
-              className={`form-control ${errors.content ? "is-invalid" : ""}`}
-              rows={12}
-              placeholder="게시글 내용을 입력하세요"
-              value={form.content}
-              onChange={handleChange}
-            />
+            <div className={`post-editor-shell ${errors.content ? "is-invalid" : ""}`}>
+              <ToastEditor
+                ref={editorRef}
+                initialValue={form.content}
+                initialEditType="markdown"
+                previewStyle="vertical"
+                height="420px"
+                usageStatistics={false}
+                hooks={{ addImageBlobHook: handleImageBlobHook }}
+                onChange={handleEditorChange}
+              />
+            </div>
             {errors.content && <div className="invalid-feedback d-block">{errors.content}</div>}
           </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PostList from "../../../components/posts/PostList";
 import { getMyPosts, getBookmarkedPosts } from "../../../api/mypageApi";
+import { getFirstImageSrcFromContent, getPreviewTextFromContent } from "../../../utils/postContentUtils";
 
 const GREEN = "#3cb878";
 const GREEN_DARK = "#2e7d32";
@@ -15,15 +16,15 @@ const TABS = [
 
 /** MyPostResponse → PostCard가 기대하는 형태로 변환 */
 function adaptPost(post, isBookmarked = false) {
-  const rawText = post.content
-    ? post.content.replace(/(<([^>]+)>)/gi, "").trim()
-    : "";
+  const previewText = getPreviewTextFromContent(post.content, 120);
+  const fallbackImage = getFirstImageSrcFromContent(post.content);
 
   return {
     postId:         post.postId,
     title:          post.title || "(제목 없음)",
-    contentPreview: rawText.slice(0, 120) || "내용 미리보기가 없습니다.",
-    thumbnailUrl:   post.thumbnailUrl ?? null,
+    content:        post.content ?? "",
+    contentPreview: previewText || "내용 미리보기가 없습니다.",
+    thumbnailUrl:   post.thumbnailUrl ?? fallbackImage ?? null,
     likeCount:      post.likeCount ?? 0,
     commentCount:   post.commentCount ?? 0,
     viewCount:      post.viewCount ?? 0,

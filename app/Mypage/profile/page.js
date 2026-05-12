@@ -217,10 +217,18 @@ export default function ProfilePage() {
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 16 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               {displayImage ? (
-                <img
-                  src={displayImage}
-                  alt="프로필"
-                  style={{ width: 88, height: 88, borderRadius: "50%", objectFit: "cover", border: `3px solid ${GREEN}` }}
+                <div
+                  role="img"
+                  aria-label="프로필"
+                  style={{
+                    width: 88,
+                    height: 88,
+                    borderRadius: "50%",
+                    backgroundImage: `url(${displayImage})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    border: `3px solid ${GREEN}`,
+                  }}
                 />
               ) : (
                 <div style={{ width: 88, height: 88, borderRadius: "50%", background: "linear-gradient(135deg, #c8e6c9, #a5d6a7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 800, color: "white", border: `3px solid ${GREEN}` }}>

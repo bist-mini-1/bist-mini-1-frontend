@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/utils/formatDate";
 import { togglePostLike, togglePostBookmark } from "@/api/postApi";
+import { getFirstImageSrcFromContent, getPreviewTextFromContent, resolveImageSrc } from "@/utils/postContentUtils";
 import useAuth from "@/hooks/useAuth";
 
 const API_BASE_URL =
@@ -22,9 +23,9 @@ export default function PostCard({ post }) {
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const detailUrl = `/post/${post.postId}`;
-  const thumbnailSrc = post.thumbnailUrl
-    ? `${API_BASE_URL}${post.thumbnailUrl}`
-    : null;
+  const firstContentImageSrc = getFirstImageSrcFromContent(post.contentPreview || post.content);
+  const thumbnailSrc = resolveImageSrc(post.thumbnailUrl || firstContentImageSrc, API_BASE_URL);
+  const previewText = getPreviewTextFromContent(post.contentPreview || post.content);
 
   const requireLogin = () => {
     if (!authInfo.isLogin) {
@@ -143,7 +144,7 @@ export default function PostCard({ post }) {
         </h5>
 
         <p className="card-text text-muted small slog-post-preview">
-          {post.contentPreview || "내용 미리보기가 없습니다."}
+          {previewText || "내용 미리보기가 없습니다."}
         </p>
 
         <div className="text-muted small">
