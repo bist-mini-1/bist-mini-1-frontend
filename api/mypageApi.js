@@ -44,7 +44,7 @@ export const updateProfileImage = async (file) => {
   const formData = new FormData();
   formData.append("profileImage", file);
   const res = await axiosInstance.patch("/api/members/me/profile-image", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: { "Content-Type": undefined }, // FormData 전송 시 boundary 포함한 Content-Type을 브라우저가 자동 설정하도록
   });
   return res.data.data; // { profileImageUrl }
 };
