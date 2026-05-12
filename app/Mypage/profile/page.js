@@ -8,7 +8,11 @@ import {
   updateBio,
   updateProfileImage,
   checkNicknameDuplicate,
+  getMyInterestTags,
+  updateInterestTags,
 } from "../../../api/mypageApi";
+import { getTagList } from "../../../api/memberApi";
+import Image from "next/image";
 
 const GREEN = "#3cb878";
 const GREEN_DARK = "#2e7d32";
@@ -40,21 +44,41 @@ export default function ProfilePage() {
   const [imagePreview, setImagePreview] = useState(null);
   const fileRef = useRef(null);
 
+  /* 관심 태그 */
+  const [allTags,         setAllTags]         = useState([]);
+  const [selectedTagIds,  setSelectedTagIds]  = useState([]);
+  const [tagSaving,       setTagSaving]       = useState(false);
+
   /* ── 프로필 불러오기 ── */
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
       try {
-        const data = await getMyProfile();
+        const [data, tagList, myTagIds] = await Promise.all([
+          getMyProfile(),
+          getTagList(),
+          getMyInterestTags().catch(() => []),
+        ]);
         setNickname(data.nickname || "");
         setNewNickname(data.nickname || "");
         setBio(data.bio || "");
         setNewBio(data.bio || "");
         setProfileImage(data.profileImageUrl || null);
+        setAllTags(tagList || []);
+        // API가 tagId 배열을 반환하거나 객체 배열일 경우 모두 처리
+        const ids = Array.isArray(myTagIds)
+          ? myTagIds.map((t) => (typeof t === "object" ? t.tagId : t))
+          : [];
+        setSelectedTagIds(ids);
       } catch {
         const nick = (typeof window !== "undefined" ? localStorage.getItem("nickname") : "") || "";
         setNickname(nick);
         setNewNickname(nick);
+        // 태그 목록은 별도로 재시도
+        try {
+          const tagList = await getTagList();
+          setAllTags(tagList || []);
+        } catch { /* 무시 */ }
       } finally {
         setLoading(false);
       }
@@ -155,6 +179,26 @@ export default function ProfilePage() {
       alert("저장에 실패했습니다.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  /* ── 관심 태그 토글 ── */
+  const toggleTag = (tagId) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+  };
+
+  /* ── 관심 태그 저장 ── */
+  const saveTags = async () => {
+    setTagSaving(true);
+    try {
+      await updateInterestTags(selectedTagIds);
+      alert("관심 태그가 저장되었습니다!");
+    } catch {
+      alert("저장에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setTagSaving(false);
     }
   };
 
@@ -378,6 +422,72 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* ── 관심 태그 ── */}
+        <div style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <SectionTitle><i className="bi bi-hash" style={{ marginRight: 6 }} />관심 태그 수정</SectionTitle>
+              <p style={{ fontSize: 12, color: "#888", margin: "4px 0 0" }}>
+                관심 있는 태그를 선택해 보세요. 
+              </p>
+            </div>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 20,
+              background: "#f0f9f1", color: GREEN, border: `1px solid #c8e6c9`,
+            }}>
+              {selectedTagIds.length}개 선택
+            </span>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            {loading ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} style={{ height: 32, width: 70, borderRadius: 20, background: "#f0f0f0", animation: "pulse 1.5s ease-in-out infinite" }} />
+                ))}
+                <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+              </div>
+            ) : allTags.length === 0 ? (
+              <p style={{ fontSize: 13, color: "#aaa", textAlign: "center", padding: "16px 0" }}>
+                선택 가능한 태그가 없습니다.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {allTags.map((tag) => {
+                  const selected = selectedTagIds.includes(tag.tagId);
+                  return (
+                    <button
+                      key={tag.tagId}
+                      type="button"
+                      onClick={() => toggleTag(tag.tagId)}
+                      style={{
+                        padding: "6px 14px",
+                        borderRadius: 20,
+                        border: selected ? `1.5px solid ${GREEN}` : "1.5px solid #ddd",
+                        background: selected ? `linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})` : "white",
+                        color: selected ? "white" : "#555",
+                        fontSize: 12,
+                        fontWeight: selected ? 700 : 500,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      #{tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+            <button onClick={saveTags} disabled={tagSaving || loading} style={greenBtn}>
+              {tagSaving ? "저장 중…" : "태그 저장"}
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );
