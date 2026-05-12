@@ -1,12 +1,174 @@
 "use client";
 
 import axiosInstance from "@/api/axiosInstance";
-import { deletePost, isMyPost } from "@/api/postApi";
+import { deletePost, isMyPost, togglePostBookmark, togglePostLike } from "@/api/postApi";
+import { getMemberProfile, getFollowCount, toggleFollowMember } from "@/api/mypageApi";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import useAuth from "@/hooks/useAuth";
 import CommentSection from "@/components/comments/CommentSection";
+
+const ToastViewer = dynamic(
+  () => import("@toast-ui/react-editor").then((module) => module.Viewer),
+  { ssr: false }
+);
+
+const articleFrameStyle = {
+  maxWidth: 920,
+  margin: "0 auto",
+  padding: "0 24px",
+  width: "100%",
+  boxSizing: "border-box",
+};
+
+function getDisplayDateParts(createdAt) {
+  if (!createdAt) {
+    return { displayDate: "-", displayTime: "-" };
+  }
+
+  const date = new Date(createdAt);
+
+  return {
+    displayDate: date.toLocaleDateString("ko-KR"),
+    displayTime: date.toLocaleTimeString("ko-KR"),
+  };
+}
+
+function normalizeTags(tags) {
+  return Array.isArray(tags)
+    ? tags
+        .map((tag) => {
+          if (typeof tag === "string") {
+            return { key: tag, label: tag };
+          }
+
+          const key = String(tag?.tagId ?? tag?.id ?? tag?.name ?? tag?.tag ?? JSON.stringify(tag));
+          const label = String(tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? key);
+
+          return { key, label };
+        })
+        .filter((tag) => tag.label && tag.label !== "undefined")
+    : [];
+}
+
+function getAuthorDisplayName(post) {
+  const authorName =
+    post?.loginId ||
+    post?.writerLoginId ||
+    post?.authorLoginId ||
+    post?.writerId ||
+    post?.authorId ||
+    post?.nickname ||
+    post?.writerNickname ||
+    post?.authorNickname;
+
+  if (authorName) {
+    return authorName;
+  }
+
+  if (post?.memberId) {
+    return `User ${post.memberId}`;
+  }
+
+  return "작성자";
+}
+
+function PostActionMenu({ actionMenuRef, canEdit, postId, showActionMenu, setShowActionMenu, onDelete }) {
+  return (
+    <div className="post-detail-menu" ref={actionMenuRef}>
+      <button
+        type="button"
+        className="btn btn-outline-secondary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center"
+        style={{ width: 36, height: 36 }}
+        aria-label="게시글 작업 메뉴"
+        aria-expanded={showActionMenu}
+        onClick={() => setShowActionMenu((prev) => !prev)}
+      >
+        <i className="bi bi-three-dots-vertical" />
+      </button>
+
+      {showActionMenu ? (
+        <div className="dropdown-menu dropdown-menu-end show shadow-sm border" style={{ display: "block", minWidth: 140 }}>
+          {canEdit && postId ? (
+            <Link
+              href={`/post/PostUpdate/${postId}`}
+              className="dropdown-item"
+              onClick={() => setShowActionMenu(false)}
+            >
+              수정
+            </Link>
+          ) : null}
+          <Link href="/" className="dropdown-item" onClick={() => setShowActionMenu(false)}>
+            목록으로
+          </Link>
+          {canEdit && postId ? (
+            <button
+              type="button"
+              className="dropdown-item text-danger"
+              onClick={() => {
+                setShowActionMenu(false);
+                onDelete();
+              }}
+            >
+              삭제
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PostBodyPanel({ content }) {
+  if (!content) {
+    return <div className="text-muted mb-4">본문이 없습니다.</div>;
+  }
+
+  return (
+    <div
+      className="rounded-4 mb-4 post-content-panel"
+      style={{
+        background: "transparent",
+        borderRadius: 0,
+        padding: "0",
+        boxShadow: "none",
+      }}
+    >
+      <ToastViewer initialValue={content} usageStatistics={false} />
+    </div>
+  );
+}
+
+function DeleteConfirmDialog({ open, deleting, onCancel, onConfirm }) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.35)", zIndex: 1050 }}
+    >
+      <div className="bg-white rounded-4 shadow p-4" style={{ width: "min(92vw, 420px)" }}>
+        <div className="fw-bold mb-2" style={{ fontSize: "1.05rem" }}>
+          삭제하시겠습니까?
+        </div>
+        <div className="text-muted small mb-4">삭제한 게시글은 복구되지 않을 수 있습니다.</div>
+        <div className="d-flex justify-content-end gap-2">
+          <button type="button" onClick={onCancel} className="btn btn-outline-secondary px-4" disabled={deleting}>
+            아니오
+          </button>
+          <button type="button" onClick={onConfirm} className="btn btn-danger px-4" disabled={deleting}>
+            {deleting ? "삭제 중..." : "예"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PostDetailPage() {
   const params = useParams();
@@ -24,7 +186,22 @@ function PostDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [railStyle, setRailStyle] = useState({});
+  const [liked, setLiked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [authorProfile, setAuthorProfile] = useState(null);
+  const [authorFollowCount, setAuthorFollowCount] = useState(null);
+  const [authorFollowing, setAuthorFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const actionMenuRef = useRef(null);
+  const railSlotRef = useRef(null);
+  const headerRef = useRef(null);
+  const contentWrapRef = useRef(null);
+  const railRef = useRef(null);
+  const titleRef = useRef(null);
 
   useEffect(() => {
     if (!bno) {
@@ -43,6 +220,9 @@ function PostDetailPage() {
 
         if (isMounted) {
           setPost(postData);
+          setLiked(Boolean(postData?.isLiked));
+          setBookmarked(Boolean(postData?.isBookmarked));
+          setLikeCount(postData?.likeCount ?? 0);
         }
       } catch (fetchError) {
         if (isMounted) {
@@ -73,10 +253,8 @@ function PostDetailPage() {
     const checkOwnership = async () => {
       try {
         const result = await isMyPost(post.postId);
-        console.log("isMyPost result:", result);
         if (isMounted) {
           const isOwner = result === true || result?.data === true;
-          console.log("isOwner:", isOwner);
           setCanEdit(isOwner);
         }
       } catch (error) {
@@ -93,6 +271,35 @@ function PostDetailPage() {
       isMounted = false;
     };
   }, [authInfo.isLogin, post?.postId]);
+
+  useEffect(() => {
+    if (!post?.memberId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchAuthorInfo = async () => {
+      try {
+        const profile = await getMemberProfile(post.memberId);
+        const followCount = await getFollowCount(post.memberId);
+
+        if (isMounted) {
+          setAuthorProfile(profile);
+          setAuthorFollowCount(followCount);
+          setAuthorFollowing(profile?.isFollowing ?? false);
+        }
+      } catch (error) {
+        console.error("Failed to fetch author info:", error);
+      }
+    };
+
+    fetchAuthorInfo();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [post?.memberId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -116,35 +323,165 @@ function PostDetailPage() {
     };
   }, []);
 
-  const displayDate = post?.createdAt
-    ? new Date(post.createdAt).toLocaleString("ko-KR")
-    : "-";
+  useEffect(() => {
+    const syncRailStyle = () => {
+      const slotElement = railSlotRef.current;
+      const headerElement = headerRef.current;
+      const contentWrapElement = contentWrapRef.current;
+      const railElement = railRef.current;
 
-  const displayUpdatedDate = post?.updatedAt
-    ? new Date(post.updatedAt).toLocaleString("ko-KR")
-    : "-";
+      if (!slotElement || !headerElement || !contentWrapElement || !railElement) {
+        setRailStyle({});
+        return;
+      }
 
-  const displayDeletedDate = post?.deletedAt
-    ? new Date(post.deletedAt).toLocaleString("ko-KR")
-    : "-";
+      const rect = slotElement.getBoundingClientRect();
+      const railRect = railElement.getBoundingClientRect();
+      const headerRect = headerElement.getBoundingClientRect();
+      const contentWrapRect = contentWrapElement.getBoundingClientRect();
+      const headerStyles = window.getComputedStyle(headerElement);
+      const headerMarginTop = Number.parseFloat(headerStyles.marginTop) || 0;
+      const headerMarginBottom = Number.parseFloat(headerStyles.marginBottom) || 0;
+      const desiredTopOffset = Math.round(
+        headerRect.top + headerRect.height + headerMarginTop + headerMarginBottom
+      );
+      const maxTopOffset = Math.round(contentWrapRect.bottom - railRect.height - 8);
+      const viewportTopOffset = Math.min(desiredTopOffset, maxTopOffset);
+      const viewportLeftOffset = Math.max(0, Math.round(rect.left - 60));
 
-  const normalizedTags = Array.isArray(post?.tags)
-    ? post.tags
-        .map((tag) => {
-          if (typeof tag === "string") {
-            return { key: tag, label: tag };
-          }
+      setRailStyle({
+        position: "fixed",
+        top: viewportTopOffset,
+        left: viewportLeftOffset,
+        width: rect.width,
+        zIndex: 2,
+      });
+    };
 
-          const key = String(tag?.tagId ?? tag?.id ?? tag?.name ?? tag?.tag ?? JSON.stringify(tag));
-          const label = String(tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? key);
+    let resizeFrameId = null;
 
-          return { key, label };
-        })
-        .filter((tag) => tag.label && tag.label !== "undefined")
-    : [];
+    const scheduleRailSync = () => {
+      if (resizeFrameId !== null) {
+        window.cancelAnimationFrame(resizeFrameId);
+      }
+
+      resizeFrameId = window.requestAnimationFrame(() => {
+        syncRailStyle();
+      });
+    };
+
+    syncRailStyle();
+    window.addEventListener("resize", scheduleRailSync);
+
+    const railResizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            scheduleRailSync();
+          })
+        : null;
+
+    if (railResizeObserver) {
+      if (railSlotRef.current) {
+        railResizeObserver.observe(railSlotRef.current);
+      }
+
+      if (headerRef.current) {
+        railResizeObserver.observe(headerRef.current);
+      }
+    }
+
+    return () => {
+      if (resizeFrameId !== null) {
+        window.cancelAnimationFrame(resizeFrameId);
+      }
+
+      window.removeEventListener("resize", scheduleRailSync);
+
+      if (railResizeObserver) {
+        railResizeObserver.disconnect();
+      }
+    };
+  }, []);
+
+  const { displayDate, displayTime } = getDisplayDateParts(post?.createdAt);
+  const normalizedTags = normalizeTags(post?.tags);
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
+  };
+
+  const requireLogin = () => {
+    if (!authInfo.isLogin) {
+      alert("로그인이 필요한 기능입니다.");
+      router.push("/login");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleLikeClick = async () => {
+    if (!post?.postId || likeLoading || !requireLogin()) {
+      return;
+    }
+
+    try {
+      setLikeLoading(true);
+      const result = await togglePostLike(post.postId);
+      const nextLiked = Boolean(result?.data);
+
+      setLiked(nextLiked);
+      setLikeCount((prev) => Math.max(prev + (nextLiked ? 1 : -1), 0));
+    } catch (error) {
+      console.error("togglePostLike error:", error);
+      alert("좋아요 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLikeLoading(false);
+    }
+  };
+
+  const handleBookmarkClick = async () => {
+    if (!post?.postId || bookmarkLoading || !requireLogin()) {
+      return;
+    }
+
+    try {
+      setBookmarkLoading(true);
+      const result = await togglePostBookmark(post.postId);
+      setBookmarked(Boolean(result?.data));
+    } catch (error) {
+      console.error("togglePostBookmark error:", error);
+      alert("스크랩 처리 중 오류가 발생했습니다.");
+    } finally {
+      setBookmarkLoading(false);
+    }
+  };
+
+  const handleShareClick = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("게시글 링크가 복사되었습니다.");
+    } catch (error) {
+      console.error("share copy error:", error);
+      alert("링크 복사에 실패했습니다.");
+    }
+  };
+
+  const handleFollowClick = async () => {
+    if (!post?.memberId || followLoading || !requireLogin()) {
+      return;
+    }
+
+    try {
+      setFollowLoading(true);
+      const result = await toggleFollowMember(post.memberId);
+      setAuthorFollowing(result);
+    } catch (error) {
+      console.error("toggleFollowMember error:", error);
+      alert("팔로우 처리 중 오류가 발생했습니다.");
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const handleCancelDelete = () => {
@@ -186,228 +523,186 @@ function PostDetailPage() {
     );
   }
 
-  const articleFrameStyle = {
-    position: "relative",
-    width: "100%",
-    margin: "0 auto",
-    padding: 24,
-    background: "#ffffff",
-    borderRadius: 28,
-    boxShadow: "0 12px 30px rgba(0, 0, 0, 0.04)",
-  };
-
-  const titleBlockStyle = {
-    padding: "22px 8px 24px",
-    borderBottom: "1px solid #b8d6bc",
-  };
-
-  const infoLineStyle = {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-    gap: 12,
-  };
-
-  const infoItemStyle = {
-    padding: "16px 18px",
-    background: "#ffffff",
-    borderRadius: 16,
-    boxShadow: "0 8px 18px rgba(0, 0, 0, 0.03)",
-  };
-
   return (
     <div className="container-fluid px-0">
-      <section style={articleFrameStyle}>
-        <div>
-          <header style={titleBlockStyle} className="mb-4">
-            <div className="d-flex align-items-start justify-content-between gap-2 flex-wrap mb-2">
-              <h1 style={{ fontSize: "clamp(1.85rem, 4vw, 3rem)", fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.03em" }} className="mb-0 flex-grow-1">
+      <section style={articleFrameStyle} className="post-detail-shell">
+        <div style={{ position: "relative", width: "100%" }}>
+          <div ref={railSlotRef} className="post-detail-rail-slot" style={{ position: "absolute", left: "-80px", top: 0, width: "auto", boxSizing: "border-box" }}>
+            <aside ref={railRef} className="post-detail-rail post-detail-rail-left" aria-label="게시글 반응" style={railStyle}>
+              <button
+                type="button"
+                className={`post-detail-action-button ${liked ? "is-active" : ""}`}
+                onClick={handleLikeClick}
+                disabled={likeLoading}
+                aria-pressed={liked}
+                aria-label="좋아요"
+              >
+                <span className="post-detail-action-icon">
+                  <i className={`bi ${liked ? "bi-heart-fill" : "bi-heart"}`} />
+                </span>
+                <span className="post-detail-action-count">{likeCount}</span>
+              </button>
+
+              <button
+                type="button"
+                className="post-detail-action-button"
+                onClick={handleShareClick}
+                aria-label="공유"
+              >
+                <span className="post-detail-action-icon">
+                  <i className="bi bi-share" />
+                </span>
+              </button>
+            </aside>
+          </div>
+
+          <article className="post-detail-main" style={{ width: "100%", boxSizing: "border-box" }}>
+            <header ref={headerRef} className="post-detail-header mb-4">
+              <h1 ref={titleRef} className="post-detail-title">
                 {post?.title || `게시글 ${bno || "상세"}`}
               </h1>
 
-              <div className="position-relative" ref={actionMenuRef}>
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center"
-                  style={{ width: 36, height: 36 }}
-                  aria-label="게시글 작업 메뉴"
-                  aria-expanded={showActionMenu}
-                  onClick={() => setShowActionMenu((prev) => !prev)}
-                >
-                  <i className="bi bi-three-dots-vertical" />
-                </button>
+              <div className="post-detail-info-row">
+                <div className="post-detail-author-row">
+                  <span className="post-detail-author-name">{getAuthorDisplayName(post)}</span>
+                  <span className="post-detail-separator">·</span>
+                  <span>{displayDate}</span>
+                  <span className="post-detail-separator">·</span>
+                  <span>{displayTime}</span>
+                </div>
 
-                {showActionMenu ? (
-                  <div
-                    className="dropdown-menu dropdown-menu-end show shadow-sm border"
-                    style={{ display: "block", minWidth: 140 }}
-                  >
-                    {canEdit && post?.postId ? (
-                      <>
-                        <button
-                          type="button"
-                          className="dropdown-item text-danger"
-                          onClick={() => {
-                            setShowActionMenu(false);
-                            handleDeleteClick();
-                          }}
-                        >
-                          삭제
-                        </button>
-                        <Link
-                          href={`/post/PostUpdate/${post.postId}`}
-                          className="dropdown-item"
-                          onClick={() => setShowActionMenu(false)}
-                        >
-                          수정
-                        </Link>
-                      </>
-                    ) : null}
-                    <Link
-                      href="/post/PostList"
-                      className="dropdown-item"
-                      onClick={() => setShowActionMenu(false)}
-                    >
-                      목록으로
-                    </Link>
-                  </div>
-                ) : null}
+                <PostActionMenu
+                  actionMenuRef={actionMenuRef}
+                  canEdit={canEdit}
+                  postId={post?.postId}
+                  showActionMenu={showActionMenu}
+                  setShowActionMenu={setShowActionMenu}
+                  onDelete={handleDeleteClick}
+                />
               </div>
-            </div>
-            <div className="d-flex flex-wrap gap-2 align-items-center text-muted fw-semibold" style={{ fontSize: 13 }}>
-              <span><span className="text-dark fw-bold">작성자</span> {post?.nickname ?? "-"}</span>
-              <span>•</span>
-              <span><span className="text-dark fw-bold">날짜</span> {displayDate}</span>
-              <span>•</span>
-              <span><span className="text-dark fw-bold">조회</span> {post?.viewCount ?? 0}</span>
-              <span>•</span>
-              <span><span className="text-dark fw-bold">좋아요</span> {post?.likeCount ?? 0}</span>
-              <span>•</span>
-              <span><span className="text-dark fw-bold">댓글</span> {post?.commentCount ?? 0}</span>
-            </div>
-          </header>
 
-          {loading ? (
-            <div className="card border-0 shadow-sm rounded-4">
-              <div className="card-body text-center py-5 text-muted">불러오는 중...</div>
-            </div>
-          ) : error ? (
-            <div className="alert alert-warning mb-0 rounded-4 border-0 shadow-sm" role="alert">
-              {error}
-            </div>
-          ) : post ? (
-            <article>
-              <section style={{ marginBottom: 28 }}>
-                <div style={infoLineStyle}>
-                  <div style={infoItemStyle}>
-                    <div className="text-dark small fw-bold mb-1">게시글 ID</div>
-                    <div className="fw-semibold text-dark">{post.postId ?? bno}</div>
-                  </div>
-                  <div style={infoItemStyle}>
-                    <div className="text-dark small fw-bold mb-1">회원 ID</div>
-                    <div className="fw-semibold text-dark">{post.memberId ?? "-"}</div>
-                  </div>
-                  <div style={infoItemStyle}>
-                    <div className="text-dark small fw-bold mb-1">작성자</div>
-                    <div className="fw-semibold text-dark">{post.nickname ?? "-"}</div>
-                  </div>
-                  <div style={infoItemStyle}>
-                    <div className="text-dark small fw-bold mb-1">수정일</div>
-                    <div className="fw-semibold text-dark">{displayUpdatedDate}</div>
-                  </div>
+              {normalizedTags.length > 0 ? (
+                <div className="post-detail-tag-row">
+                  {normalizedTags.map((tag) => (
+                    <span key={tag.key} className="post-detail-tag-pill">
+                      #{tag.label}
+                    </span>
+                  ))}
                 </div>
-              </section>
+              ) : null}
+            </header>
 
-              <section className="mb-4">
-                <div className="d-flex align-items-center gap-2 text-muted small mb-2">
-                  <span className="text-dark fw-bold">작성일</span>
-                  <span>•</span>
-                  <span className="text-dark fw-semibold">{displayDate}</span>
+            {loading ? (
+              <div className="card border-0 shadow-sm rounded-4">
+                <div className="card-body text-center py-5 text-muted">불러오는 중...</div>
+              </div>
+            ) : error ? (
+              <div className="alert alert-warning mb-0 rounded-4 border-0 shadow-sm" role="alert">
+                {error}
+              </div>
+            ) : post ? (
+              <div className="post-detail-body-grid" style={{ width: "100%", boxSizing: "border-box" }}>
+                <div ref={contentWrapRef} className="post-detail-content-wrap" style={{ width: "100%", boxSizing: "border-box" }}>
+                  <PostBodyPanel content={post.content} />
                 </div>
-              </section>
-
-              {post.content ? (
-                <div
-                  className="rounded-4 mb-4"
-                  style={{
-                    whiteSpace: "pre-wrap",
-                    lineHeight: 2,
-                    fontSize: "1.06rem",
-                    color: "#3f463f",
-                    background: "#ffffff",
-                    borderRadius: 22,
-                    padding: "34px 30px",
-                    boxShadow: "0 10px 24px rgba(0, 0, 0, 0.03)",
-                  }}
-                >
-                  <div className="text-uppercase small text-muted mb-3" style={{ letterSpacing: "0.12em" }}>
-                    Content
-                  </div>
-                  {post.content}
-                </div>
-              ) : (
-                <div className="text-muted mb-4">본문이 없습니다.</div>
-              )}
-
-              {normalizedTags.length > 0 && (
-                <section>
-                  <div className="text-muted small mb-2">Tags</div>
-                  <div className="d-flex flex-wrap gap-2">
-                    {normalizedTags.map((tag, index) => (
-                      <span
-                        key={`${tag.key}-${index}`}
-                        className="badge rounded-pill px-3 py-2"
-                        style={{ backgroundColor: "#eaf6ea", color: "#111111", border: "1px solid #b8d6bc" }}
-                      >
-                        #{tag.label}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </article>
-          ) : (
-            <div className="alert alert-secondary mb-0 rounded-4 border-0 shadow-sm" role="alert">
-              게시글이 없습니다.
-            </div>
-          )}
+              </div>
+            ) : (
+              <div className="alert alert-secondary mb-0 rounded-4 border-0 shadow-sm" role="alert">
+                게시글이 없습니다.
+              </div>
+            )}
+          </article>
         </div>
       </section>
+
+      {post && (
+        <section style={{ maxWidth: 920, margin: "0 auto 40px", padding: "0 24px", width: "100%", boxSizing: "border-box" }}>
+          <div style={{ backgroundColor: "#f8f9fa", borderRadius: 16, padding: "24px", display: "flex", gap: "20px", alignItems: "center" }}>
+            {authorProfile?.profileImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={authorProfile.profileImageUrl}
+                alt={authorProfile.nickname}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: "50%",
+                  backgroundColor: "#e9ecef",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "32px",
+                  flexShrink: 0,
+                }}
+              >
+                👤
+              </div>
+            )}
+
+            <div style={{ flex: 1 }}>
+              <div style={{ marginBottom: "8px" }}>
+                <h3 style={{ margin: "0 0 4px 0", fontSize: "18px", fontWeight: 600 }}>
+                  {authorProfile?.nickname || getAuthorDisplayName(post)}
+                </h3>
+                <p style={{ margin: 0, color: "#6c757d", fontSize: "14px" }}>
+                  {authorProfile?.loginId || "-"}
+                </p>
+              </div>
+              {authorProfile?.bio && (
+                <p style={{ margin: "8px 0 0 0", color: "#495057", fontSize: "14px" }}>
+                  {authorProfile.bio}
+                </p>
+              )}
+              <div style={{ marginTop: "8px", display: "flex", gap: "16px", fontSize: "14px", color: "#6c757d" }}>
+                <span>팔로워 {authorFollowCount?.followerCount ?? 0}</span>
+                <span>팔로잉 {authorFollowCount?.followingCount ?? 0}</span>
+              </div>
+            </div>
+
+            {post?.memberId !== authInfo?.memberId && (
+              <button
+                onClick={handleFollowClick}
+                disabled={followLoading}
+                style={{
+                  padding: "8px 24px",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: authorFollowing ? "#e9ecef" : "#0d6efd",
+                  color: authorFollowing ? "#495057" : "#ffffff",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                {followLoading ? "처리 중..." : authorFollowing ? "팔로잉" : "팔로우"}
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
       {post?.postId && (
         <CommentSection postId={post.postId} postAuthorId={post.memberId} />
       )}
 
-      {showDeleteConfirm ? (
-        <div
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-          style={{ backgroundColor: "rgba(0, 0, 0, 0.35)", zIndex: 1050 }}
-        >
-          <div className="bg-white rounded-4 shadow p-4" style={{ width: "min(92vw, 420px)" }}>
-            <div className="fw-bold mb-2" style={{ fontSize: "1.05rem" }}>
-              삭제하시겠습니까?
-            </div>
-            <div className="text-muted small mb-4">삭제한 게시글은 복구되지 않을 수 있습니다.</div>
-            <div className="d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                onClick={handleCancelDelete}
-                className="btn btn-outline-secondary px-4"
-                disabled={deleting}
-              >
-                아니오
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                className="btn btn-danger px-4"
-                disabled={deleting}
-              >
-                {deleting ? "삭제 중..." : "예"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <DeleteConfirmDialog
+        open={showDeleteConfirm}
+        deleting={deleting}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }

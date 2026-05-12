@@ -121,8 +121,10 @@ function CommentSection({ postId, postAuthorId }) {
 
   const sectionStyle = {
     maxWidth: 920,
-    margin: "40px auto 80px",
+    margin: "0 auto 40px",
     padding: "0 24px",
+    width: "100%",
+    boxSizing: "border-box",
   };
 
   const headerStyle = {

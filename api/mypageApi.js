@@ -112,66 +112,19 @@ export const getFollowCount = async (memberId) => {
 };
 
 /**
- * 팔로워 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
+ * 특정 멤버 프로필 조회 (로그인 필요 X) → { memberId, loginId, nickname, bio, profileImageUrl, isFollowing }
  * @param {number} memberId
  */
-export const getFollowers = async (memberId) => {
-  const res = await axiosInstance.get(`/api/follows/${memberId}/followers`);
-  return res.data.data ?? { count: 0, users: [] };
+export const getMemberProfile = async (memberId) => {
+  const res = await axiosInstance.get(`/api/members/${memberId}`);
+  return res.data.data;
 };
 
 /**
- * 팔로잉 목록 조회 → { count, users: [{ memberId, nickname, profileImage }] }
+ * 팔로우/언팔로우 토글 → { data: true = 팔로우됨, false = 언팔로우됨 }
  * @param {number} memberId
  */
-export const getFollowings = async (memberId) => {
-  const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
-  return res.data.data ?? { count: 0, users: [] };
-};
-
-/**
- * 본인 여부 확인
- * @param {number} memberId
- * @returns {Promise<boolean>}
- */
-export const checkIsMe = async (memberId) => {
-  try {
-    const res = await axiosInstance.get(`/api/members/${memberId}/is-me`);
-    return res.data.data === true;
-  } catch (error) {
-    return false;
-  }
-};
-
-/**
- * 내 팔로워 목록 조회 (토큰 기반)
- */
-export const getMyFollowers = async () => {
-  const res = await axiosInstance.get("/api/follows/me/followers");
-  return res.data.data ?? { count: 0, users: [] };
-};
-
-/**
- * 내 팔로잉 목록 조회 (토큰 기반)
- */
-export const getMyFollowings = async () => {
-  const res = await axiosInstance.get("/api/follows/me/followings");
-  return res.data.data ?? { count: 0, users: [] };
-};
-
-/**
- * 내 관심 태그 목록 조회 → number[] (tagId 배열)
- */
-export const getMyInterestTags = async () => {
-  const res = await axiosInstance.get("/api/members/me/interest-tags");
-  return res.data.data ?? [];
-};
-
-/**
- * 내 관심 태그 수정
- * @param {number[]} tagIds - 선택된 tagId 배열
- */
-export const updateInterestTags = async (tagIds) => {
-  const res = await axiosInstance.patch("/api/members/me/interest-tags", { tagIds });
-  return res.data;
+export const toggleFollowMember = async (memberId) => {
+  const res = await axiosInstance.post(`/api/follows/${memberId}`);
+  return res.data.data; // boolean
 };

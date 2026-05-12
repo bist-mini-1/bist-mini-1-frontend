@@ -13,7 +13,6 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async () => {
     try {
-      setLoading(true);
       const response = await getNotifications();
       setNotifications(response.data || []);
     } catch (error) {
@@ -24,16 +23,24 @@ export default function NotificationsPage() {
   };
 
   useEffect(() => {
+    let initialFetchTimer = null;
+
     if (authInfo.isLogin) {
-      fetchNotifications();
+      initialFetchTimer = window.setTimeout(() => {
+        void fetchNotifications();
+      }, 0);
     }
 
     const handleRefresh = () => {
-      fetchNotifications();
+      console.log("Page: Notifications changed elsewhere, refreshing list...");
+      void fetchNotifications();
     };
 
     window.addEventListener("notificationsChanged", handleRefresh);
     return () => {
+      if (initialFetchTimer !== null) {
+        window.clearTimeout(initialFetchTimer);
+      }
       window.removeEventListener("notificationsChanged", handleRefresh);
     };
   }, [authInfo.isLogin]);
