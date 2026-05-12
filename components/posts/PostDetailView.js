@@ -161,7 +161,8 @@ export default function PostDetailView({
   railSlotRef,
   railStyle,
 }) {
-  const showFollowButton = post?.memberId && post.memberId !== currentMemberId;
+  // canEdit가 true이면 본인 글이므로 팔로우 버튼을 숨깁니다.
+  const showFollowButton = post?.memberId && !canEdit;
 
   return (
     <>
@@ -207,9 +208,7 @@ export default function PostDetailView({
 
               <div className="post-detail-info-row">
                 <div className="post-detail-author-row">
-                  <Link href={`/Mypage/user/${post?.memberId}`} className="post-detail-author-name text-decoration-none">
-                    {getAuthorDisplayName(post)}
-                  </Link>
+                  <span className="post-detail-author-name">{getAuthorDisplayName(post)}</span>
                   <span className="post-detail-separator">·</span>
                   <span>{displayDate}</span>
                   <span className="post-detail-separator">·</span>
@@ -265,17 +264,15 @@ export default function PostDetailView({
           <div className="post-author-card">
             {authorProfile?.profileImageUrl && String(authorProfile.profileImageUrl).trim() ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <Link href={`/Mypage/user/${post?.memberId}`}>
-                <img
-                  src={
-                    authorProfile.profileImageUrl.startsWith("http")
-                      ? authorProfile.profileImageUrl
-                      : getBackendAbsoluteUrl(authorProfile.profileImageUrl)
-                  }
-                  alt={authorProfile.nickname || getAuthorDisplayName(post)}
-                  className="post-author-avatar"
-                />
-              </Link>
+              <img
+                src={
+                  authorProfile.profileImageUrl.startsWith("http")
+                    ? authorProfile.profileImageUrl
+                    : getBackendAbsoluteUrl(authorProfile.profileImageUrl)
+                }
+                alt={authorProfile.nickname || getAuthorDisplayName(post)}
+                className="post-author-avatar"
+              />
             ) : (
               <div className="post-author-avatar post-author-avatar-placeholder">👤</div>
             )}
