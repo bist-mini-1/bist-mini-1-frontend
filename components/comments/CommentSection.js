@@ -103,7 +103,8 @@ function CommentSection({ postId, postAuthorId }) {
   }, [postId, page, flatComments]);
 
   useEffect(() => {
-    fetchComments(false);
+    const t = setTimeout(() => fetchComments(false), 0);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
 

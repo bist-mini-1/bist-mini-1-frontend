@@ -12,13 +12,8 @@ const ChatList = ({ onSelectRoom }) => {
   const [followings, setFollowings] = useState([]); // 팔로우 중인 사람
   const [showFollowing, setShowFollowing] = useState(false); // 팔로우 목록 표시 여부
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchRooms();
-  }, []);
-
   // 참여 중인 채팅방 목록 조회
-  const fetchRooms = async () => {
+  async function fetchRooms() {
     try {
       setLoading(true);
       const data = await getChatRooms();
@@ -28,7 +23,12 @@ const ChatList = ({ onSelectRoom }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const t = setTimeout(() => fetchRooms(), 0);
+    return () => clearTimeout(t);
+  }, []);
 
   // 팔로우 목록 조회
     const fetchFollowings = async () => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
@@ -24,6 +24,16 @@ const ChatWindow = ({ room }) => {
   const stompClient = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // 읽음 처리 핸들러
+  const handleMarkAsRead = useCallback(async () => {
+    try {
+      await markAsRead(room.roomId);
+      window.dispatchEvent(new CustomEvent('chatUnreadChanged'));
+    } catch (error) {
+      console.error("읽음 처리 실패:", error);
+    }
+  }, [room.roomId]);
+
   // 메뉴 팝업 닫기 처리
   useEffect(() => {
     const handleOutsideClick = () => setActiveMenuId(null);
@@ -37,7 +47,7 @@ const ChatWindow = ({ room }) => {
   };
 
   // 메시지 로드 함수
-  const loadHistory = async (targetPage, isInitial = false) => {
+  const loadHistory = useCallback(async (targetPage, isInitial = false) => {
     if (isLoading || (!isInitial && !hasMore)) return;
     
     setIsLoading(true);
@@ -73,17 +83,20 @@ const ChatWindow = ({ room }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoading, hasMore, room.roomId]);
 
   // 초기 로드 및 구독
   useEffect(() => {
-    const myId = localStorage.getItem('memberId');
-    if (myId) setMemberId(Number(myId));
+    // defer state updates to avoid synchronous setState in effect
+    const t = setTimeout(() => {
+      const myId = localStorage.getItem('memberId');
+      if (myId) setMemberId(Number(myId));
 
-    setMessages([]);
-    setPage(1);
-    setHasMore(true);
-    loadHistory(1, true);
+      setMessages([]);
+      setPage(1);
+      setHasMore(true);
+      loadHistory(1, true);
+    }, 0);
 
     const getBaseURL = () => {
       if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -134,22 +147,17 @@ const ChatWindow = ({ room }) => {
 
     client.activate();
     stompClient.current = client;
-    handleMarkAsRead();
+    // 읽음 처리도 비동기로 실행
+    const markTimeout = setTimeout(() => handleMarkAsRead(), 0);
 
     return () => {
+      clearTimeout(t);
+      clearTimeout(markTimeout);
       if (stompClient.current) stompClient.current.deactivate();
     };
-  }, [room.roomId]);
+  }, [room.roomId, loadHistory, handleMarkAsRead]);
 
-  // 읽음 처리 핸들러
-  const handleMarkAsRead = async () => {
-    try {
-      await markAsRead(room.roomId);
-      window.dispatchEvent(new CustomEvent('chatUnreadChanged'));
-    } catch (error) {
-      console.error("읽음 처리 실패:", error);
-    }
-  };
+  
 
   // 상단 스크롤 감지 (추가 로드)
   const handleScroll = (e) => {

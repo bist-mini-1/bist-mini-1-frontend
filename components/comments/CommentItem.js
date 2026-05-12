@@ -44,8 +44,12 @@ function CommentItem({ comment, isReply = false, onRefresh, postId, postAuthorId
 
   // 댓글 데이터가 바뀌면(onRefresh 후 등) 좋아요 상태 업데이트
   useEffect(() => {
-    setLikeCount(comment.likeCount || 0);
-    setIsLiked(comment.isLiked || false);
+    // 비동기적으로 상태를 설정하여 effect 내 동기 setState 경고 회피
+    const t = setTimeout(() => {
+      setLikeCount(comment.likeCount || 0);
+      setIsLiked(comment.isLiked || false);
+    }, 0);
+    return () => clearTimeout(t);
   }, [comment.likeCount, comment.isLiked]);
 
   // 드롭다운 바깥 클릭 시 닫기

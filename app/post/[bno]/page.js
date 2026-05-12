@@ -2,7 +2,7 @@
 
 import axiosInstance from "@/api/axiosInstance";
 import { deletePost, isMyPost, togglePostBookmark, togglePostLike } from "@/api/postApi";
-import { getMemberProfile, getFollowCount, toggleFollowMember } from "@/api/mypageApi";
+import { getUserProfile, getFollowCount, followUser, unfollowUser } from "@/api/mypageApi";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -11,10 +11,7 @@ import dynamic from "next/dynamic";
 import useAuth from "@/hooks/useAuth";
 import CommentSection from "@/components/comments/CommentSection";
 
-const ToastViewer = dynamic(
-  () => import("@toast-ui/react-editor").then((module) => module.Viewer),
-  { ssr: false }
-);
+const ToastViewer = dynamic(() => import("@/components/common/ToastViewer"), { ssr: false });
 
 const articleFrameStyle = {
   maxWidth: 920,
@@ -281,7 +278,7 @@ function PostDetailPage() {
 
     const fetchAuthorInfo = async () => {
       try {
-        const profile = await getMemberProfile(post.memberId);
+        const profile = await getUserProfile(post.memberId);
         const followCount = await getFollowCount(post.memberId);
 
         if (isMounted) {
@@ -474,8 +471,13 @@ function PostDetailPage() {
 
     try {
       setFollowLoading(true);
-      const result = await toggleFollowMember(post.memberId);
-      setAuthorFollowing(result);
+        if (authorFollowing) {
+          await unfollowUser(post.memberId);
+          setAuthorFollowing(false);
+        } else {
+          await followUser(post.memberId);
+          setAuthorFollowing(true);
+        }
     } catch (error) {
       console.error("toggleFollowMember error:", error);
       alert("팔로우 처리 중 오류가 발생했습니다.");

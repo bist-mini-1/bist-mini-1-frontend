@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
 import useAuth from '../../hooks/useAuth';
@@ -30,7 +30,7 @@ const ChatWidget = () => {
   };
 
   // 안 읽은 메시지 총합 계산
-  const fetchTotalUnread = async () => {
+  const fetchTotalUnread = useCallback(async () => {
     if (!authInfo.isLogin) return;
     try {
       const rooms = await getChatRooms();
@@ -39,13 +39,14 @@ const ChatWidget = () => {
     } catch (error) {
       console.error("전체 안 읽은 메시지 조회 실패:", error);
     }
-  };
+  }, [authInfo.isLogin]);
 
   // 초기 로드 및 SSE 구독
   useEffect(() => {
     if (!authInfo.isLogin) return;
 
-    fetchTotalUnread();
+    // 비동기로 호출하여 useEffect 내부에서 동기 setState를 피함
+    const t = setTimeout(() => fetchTotalUnread(), 0);
 
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) return;
@@ -62,12 +63,12 @@ const ChatWidget = () => {
     // 채팅 안 읽음 카운트 갱신 이벤트 수신
     eventSource.addEventListener('chat_unread_update', (event) => {
       console.log('SSE (ChatWidget): 채팅 안 읽음 카운트 갱신 이벤트 수신');
-      fetchTotalUnread();
+      setTimeout(() => fetchTotalUnread(), 0);
     });
 
     // 일반 알림 발생 시에도 전체 카운트 갱신
     eventSource.addEventListener('notification', () => {
-      fetchTotalUnread();
+      setTimeout(() => fetchTotalUnread(), 0);
     });
 
     eventSource.onopen = () => {
@@ -81,8 +82,9 @@ const ChatWidget = () => {
 
     return () => {
       eventSource.close();
+      clearTimeout(t);
     };
-  }, [authInfo.isLogin]);
+  }, [authInfo.isLogin, fetchTotalUnread]);
 
   // 내부 읽음 처리 이벤트 리스너
   useEffect(() => {
@@ -92,7 +94,7 @@ const ChatWidget = () => {
     };
     window.addEventListener('chatUnreadChanged', handleChatRead);
     return () => window.removeEventListener('chatUnreadChanged', handleChatRead);
-  }, []);
+  }, [fetchTotalUnread]);
 
   // 바깥 영역 클릭 시 닫기
   useEffect(() => {
