@@ -1,30 +1,15 @@
 "use client";
 
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
 import { uploadFiles } from "@/api/fileApi";
+import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), {
   ssr: false,
   loading: () => <div className="alert alert-info mb-0">에디터 로드 중...</div>,
 });
 
-const getBackendAbsoluteUrl = (relativePath) => {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return `${process.env.NEXT_PUBLIC_API_BASE_URL}${relativePath}`;
-  }
-
-  // 브라우저 환경일 때만 현재 호스트 주소를 사용
-  if (typeof window !== "undefined" && window.location) {
-    const hostname = window.location.hostname;
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-      return `http://${hostname}:8080${relativePath}`;
-    }
-  }
-
-  // 기본값 (로컬 개발 시)
-  return `http://localhost:8080${relativePath}`;
-};
 
 const emptyForm = {
   title: "",
@@ -71,6 +56,22 @@ export default function PostForm({
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState([]);
+
+  // 수정 폼에서 기존 본문에 포함된 이미지들을 추출하여 썸네일 선택지에 추가
+  useEffect(() => {
+    if (initialValues?.content) {
+      const pattern = /!\[.*?\]\((.*?)\)/g;
+      const matches = [...initialValues.content.matchAll(pattern)];
+      const urls = matches.map(m => m[1]).filter(Boolean);
+      
+      if (urls.length > 0) {
+        setUploadedImages(prev => {
+          const combined = [...prev, ...urls];
+          return [...new Set(combined)]; // 중복 제거
+        });
+      }
+    }
+  }, [initialValues]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -165,13 +166,7 @@ export default function PostForm({
       nextErrors.isPublic = "공개 여부를 선택해주세요.";
     }
 
-    if (form.thumbnail.trim().length > 0) {
-      try {
-        new URL(form.thumbnail.trim());
-      } catch {
-        nextErrors.thumbnail = "썸네일 URL 형식이 올바르지 않습니다.";
-      }
-    }
+
 
     setErrors(nextErrors);
 
@@ -248,35 +243,10 @@ export default function PostForm({
               </div>
 
               <div data-color-mode="light">
-                <MDEditor
-                  value={content}
-                  onChange={(value) => {
-                    setContent(value ?? "");
-
-                    if (errors.content) {
-                      setErrors((current) => ({
-                        ...current,
-                        content: "",
-                      }));
-                    }
-                  }}
-                  height={420}
-                  preview="live"
-                  previewOptions={{
-                    components: {
-                      img: ({ src, alt }) => {
-                        if (!src || !String(src).trim()) return null;
-                        let absoluteSrc = src;
-                        if (src.startsWith("/api/attachments")) {
-                          absoluteSrc = getBackendAbsoluteUrl(src);
-                        }
-                        return <img src={absoluteSrc} alt={alt || "이미지"} style={{ maxWidth: "100%" }} />;
-                      },
-                    },
-                  }}
-                  textareaProps={{
-                    placeholder: "게시글 내용을 입력하세요",
-                  }}
+                <PostMDEditor
+                  content={content}
+                  setContent={setContent}
+                  getBackendAbsoluteUrl={getBackendAbsoluteUrl}
                 />
               </div>
             </div>
@@ -297,40 +267,28 @@ export default function PostForm({
             <div className="form-text">쉼표로 구분해서 입력하세요.</div>
           </div>
 
-          <div className="col-12 col-lg-6">
-            <label className="form-label fw-semibold">썸네일 URL</label>
-            <input
-              type="url"
-              name="thumbnail"
-              className={`form-control ${errors.thumbnail ? "is-invalid" : ""}`}
-              placeholder="https://example.com/thumbnail.jpg"
-              value={form.thumbnail}
-              onChange={handleChange}
-            />
-            {errors.thumbnail ? (
-              <div className="invalid-feedback d-block">{errors.thumbnail}</div>
-            ) : (
-              <div className="form-text">선택 입력입니다.</div>
-            )}
+          <div className="col-12">
+            <label className="form-label fw-semibold">썸네일 선택</label>
 
-            {uploadedImages.length > 0 && (
+
+            {uploadedImages.length > 0 ? (
               <div className="mt-2">
-                <div className="small text-muted mb-1">업로드된 이미지에서 선택:</div>
+                <div className="small text-muted mb-2">본문에 삽입된 이미지 중 하나를 썸네일로 선택할 수 있습니다 (첫 번째 이미지가 기본값):</div>
                 <div className="d-flex flex-wrap gap-2">
                   {uploadedImages.map((url, idx) => (
                     <button
                       key={idx}
                       type="button"
-                      className={`btn p-0 border rounded-2 overflow-hidden ${
-                        form.thumbnail === url ? "border-primary border-2" : ""
+                      className={`btn p-0 border rounded-3 overflow-hidden position-relative ${
+                        form.thumbnail === url ? "border-primary border-3 shadow-sm" : "border-light-subtle"
                       }`}
-                      style={{ width: "60px", height: "60px" }}
+                      style={{ width: "80px", height: "80px", transition: "all 0.2s" }}
                       onClick={() =>
                         setForm((prev) => ({ ...prev, thumbnail: url }))
                       }
                     >
                       <img
-                        src={url}
+                        src={getBackendAbsoluteUrl(url)}
                         alt="Thumbnail suggestion"
                         style={{
                           width: "100%",
@@ -338,9 +296,19 @@ export default function PostForm({
                           objectFit: "cover",
                         }}
                       />
+                      {form.thumbnail === url && (
+                        <div className="position-absolute top-0 end-0 bg-primary text-white p-1 rounded-bottom-start shadow-sm" style={{ lineHeight: 1 }}>
+                          <i className="bi bi-check-lg small" />
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div className="alert alert-light border border-dashed py-3 text-center mb-0">
+                <i className="bi bi-image text-muted d-block fs-2 mb-2"></i>
+                <span className="text-muted small">이미지를 업로드하면 자동으로 썸네일로 설정됩니다.</span>
               </div>
             )}
           </div>
@@ -379,3 +347,50 @@ export default function PostForm({
     </form>
   );
 }
+
+// 에디터 글자 지워짐/커서 점프 현상 방지를 위해 메모이제이션 컴포넌트로 분리
+const PostMDEditor = memo(({ content, setContent, getBackendAbsoluteUrl }) => {
+  const previewOptions = useMemo(() => ({
+    components: {
+      img: ({ src, alt }) => {
+        if (!src || !String(src).trim()) return null;
+        let absoluteSrc = src;
+        if (src.startsWith("/api/attachments")) {
+          absoluteSrc = getBackendAbsoluteUrl(src);
+        }
+        return (
+          <img 
+            src={absoluteSrc} 
+            alt={alt || "이미지"} 
+            style={{ maxWidth: "100%", borderRadius: "8px" }} 
+            loading="lazy"
+          />
+        );
+      },
+    },
+  }), [getBackendAbsoluteUrl]);
+
+  return (
+    <MDEditor
+      value={content}
+      onChange={setContent}
+      height={420}
+      preview="live"
+      previewOptions={previewOptions}
+      textareaProps={{
+        placeholder: "게시글 내용을 입력하세요",
+        spellCheck: false,
+        autoComplete: "off",
+        autoCorrect: "off",
+        autoCapitalize: "off",
+        style: {
+          fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
+          fontSize: "15px",
+          lineHeight: "1.6",
+        }
+      }}
+    />
+  );
+});
+
+PostMDEditor.displayName = "PostMDEditor";

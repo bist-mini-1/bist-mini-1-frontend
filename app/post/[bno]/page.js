@@ -334,7 +334,14 @@ function PostDetailPage() {
       setBookmarkLoading(true);
 
       const result = await togglePostBookmark(post.postId);
-      setBookmarked(Boolean(result?.data));
+      const nextBookmarked = Boolean(result?.data);
+      setBookmarked(nextBookmarked);
+
+      if (nextBookmarked) {
+        alert("게시글을 스크랩했습니다.");
+      } else {
+        alert("스크랩을 취소했습니다.");
+      }
     } catch (error) {
       console.error("togglePostBookmark error:", error);
       alert("스크랩 처리 중 오류가 발생했습니다.");
@@ -344,12 +351,31 @@ function PostDetailPage() {
   };
 
   const handleShareClick = async () => {
+    const url = window.location.href;
+
     try {
-      await navigator.clipboard.writeText(window.location.href);
-      alert("게시글 링크가 복사되었습니다.");
+      // 1. Modern Navigator API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+        alert("게시글 링크가 복사되었습니다.");
+        return;
+      }
+      
+      // 2. Fallback: ExecCommand
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        alert("게시글 링크가 복사되었습니다. (Fallback)");
+      } catch (err) {
+        throw new Error("Copy command failed");
+      }
+      document.body.removeChild(textArea);
     } catch (error) {
       console.error("share copy error:", error);
-      alert("링크 복사에 실패했습니다.");
+      alert("링크 복사에 실패했습니다. 주소창의 URL을 직접 복사해주세요.");
     }
   };
 
@@ -435,6 +461,9 @@ function PostDetailPage() {
         likeLoading={likeLoading}
         onLikeClick={handleLikeClick}
         onShareClick={handleShareClick}
+        bookmarked={bookmarked}
+        bookmarkLoading={bookmarkLoading}
+        onBookmarkClick={handleBookmarkClick}
         currentMemberId={authInfo?.memberId}
         canEdit={canEdit}
         actionMenuRef={actionMenuRef}
