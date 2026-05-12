@@ -10,8 +10,10 @@ import {
   checkNicknameDuplicate,
   getMyInterestTags,
   updateInterestTags,
+  getMyProfileImage,
 } from "../../../api/mypageApi";
 import { getTagList } from "../../../api/memberApi";
+import { getBackendAbsoluteUrl } from "../../../utils/urlUtils";
 import Image from "next/image";
 
 const GREEN = "#3cb878";
@@ -70,6 +72,16 @@ export default function ProfilePage() {
           ? myTagIds.map((t) => (typeof t === "object" ? t.tagId : t))
           : [];
         setSelectedTagIds(ids);
+
+        // 프로필 이미지 별도 fetch (401 방지)
+        if (data.profileImageUrl) {
+          try {
+            const blob = await getMyProfileImage();
+            setProfileImage(URL.createObjectURL(blob));
+          } catch (e) {
+            setProfileImage(null);
+          }
+        }
       } catch {
         const nick = (typeof window !== "undefined" ? localStorage.getItem("nickname") : "") || "";
         setNickname(nick);
@@ -226,10 +238,11 @@ export default function ProfilePage() {
     }
     setSaving(true);
     try {
-      const data = await updateProfileImage(imageFile);
-      const url = data?.profileImageUrl || imagePreview;
+      await updateProfileImage(imageFile);
+      // 성공 시 새로운 블롭을 가져와서 상태 업데이트
+      const blob = await getMyProfileImage();
+      const url = URL.createObjectURL(blob);
       setProfileImage(url);
-      localStorage.setItem("profileImageUrl", url);
       window.dispatchEvent(new Event("authChanged"));
       setImageFile(null);
       setImagePreview(null);
@@ -260,17 +273,20 @@ export default function ProfilePage() {
           <SectionTitle><i className="bi bi-person-circle" style={{ marginRight: 6 }} />프로필 사진</SectionTitle>
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 16 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
-              {displayImage ? (
-                <img
-                  src={displayImage}
-                  alt="프로필"
-                  style={{ width: 88, height: 88, borderRadius: "50%", objectFit: "cover", border: `3px solid ${GREEN}` }}
-                />
-              ) : (
-                <div style={{ width: 88, height: 88, borderRadius: "50%", background: "linear-gradient(135deg, #c8e6c9, #a5d6a7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 800, color: "white", border: `3px solid ${GREEN}` }}>
-                  {nickname ? nickname.charAt(0).toUpperCase() : "U"}
-                </div>
-              )}
+              <div style={{ width: 88, height: 88, borderRadius: "50%", overflow: "hidden", background: "linear-gradient(135deg, #c8e6c9, #a5d6a7)", display: "flex", alignItems: "center", justifyContent: "center", border: `3px solid ${GREEN}`, position: "relative" }}>
+                {displayImage ? (
+                  <img
+                    src={displayImage}
+                    alt="프로필"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={() => setProfileImage(null)}
+                  />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, fontWeight: 800, color: "white" }}>
+                    {nickname ? nickname.charAt(0).toUpperCase() : "U"}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => fileRef.current?.click()}
                 style={{ position: "absolute", bottom: 0, right: 0, width: 26, height: 26, borderRadius: "50%", background: GREEN_DARK, border: "2px solid white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "white" }}
