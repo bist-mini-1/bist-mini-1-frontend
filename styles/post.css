@@ -153,3 +153,87 @@
 .slog-bookmark-button:disabled {
   opacity: 0.6;
 }
+
+.post-editor-shell {
+  border: 1px solid var(--slog-green-border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.05);
+}
+
+.post-editor-shell.is-invalid {
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.08);
+}
+
+.post-editor-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+
+.post-editor-shell .w-md-editor {
+  border: 0;
+  box-shadow: none;
+}
+
+.post-editor-shell .w-md-editor-text-pre,
+.post-editor-shell .w-md-editor-text-input,
+.post-editor-shell .w-md-editor-text {
+  font-size: 0.98rem;
+  line-height: 1.75;
+}
+
+.post-markdown-body {
+  color: #1f2937;
+  line-height: 1.85;
+  word-break: break-word;
+}
+
+.post-markdown-body h1,
+.post-markdown-body h2,
+.post-markdown-body h3,
+.post-markdown-body h4,
+.post-markdown-body h5,
+.post-markdown-body h6 {
+  color: #111827;
+  font-weight: 800;
+  margin-top: 1.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.post-markdown-body p {
+  margin: 0 0 1rem;
+}
+
+.post-markdown-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1rem auto;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.post-markdown-body pre {
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  overflow-x: auto;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.post-markdown-body code {
+  font-size: 0.95em;
+}
+
+.post-markdown-body blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--slog-green);
+  background: #f8faf9;
+  color: #374151;
+  border-radius: 0 14px 14px 0;
+}

@@ -23,7 +23,9 @@ export default function PostCard({ post, onLikeChanged }) {
 
   const detailUrl = `/post/${post.postId}`;
   const thumbnailSrc = post.thumbnailUrl
-    ? `${API_BASE_URL}${post.thumbnailUrl}`
+    ? post.thumbnailUrl.startsWith("http")
+      ? post.thumbnailUrl
+      : `${API_BASE_URL}${post.thumbnailUrl}`
     : null;
 
   const handleCardClick = () => {
