@@ -1,13 +1,24 @@
 "use client";
 
 import axiosInstance from "@/api/axiosInstance";
-import { deletePost, isMyPost, togglePostLike, togglePostBookmark } from "@/api/postApi";
-import { getUserProfile, getFollowCount, followUser, unfollowUser } from "@/api/mypageApi";
+import {
+  deletePost,
+  isMyPost,
+  togglePostLike,
+  togglePostBookmark,
+} from "@/api/postApi";
+import {
+  getUserProfile,
+  getFollowCount,
+  followUser,
+  unfollowUser,
+} from "@/api/mypageApi";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import CommentSection from "@/components/comments/CommentSection";
 import PostDetailView from "@/components/posts/PostDetailView";
+import RecommendedPostList from "@/components/posts/RecommendedPostList";
 
 function PostDetailPage() {
   const params = useParams();
@@ -56,7 +67,8 @@ function PostDetailPage() {
 
       try {
         const response = await axiosInstance.get(`/api/posts/${bno}`);
-        const postData = response.data?.data ?? response.data?.post ?? response.data ?? null;
+        const postData =
+          response.data?.data ?? response.data?.post ?? response.data ?? null;
 
         if (isMounted) {
           setPost(postData);
@@ -143,7 +155,10 @@ function PostDetailPage() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+      if (
+        actionMenuRef.current &&
+        !actionMenuRef.current.contains(event.target)
+      ) {
         setShowActionMenu(false);
       }
     };
@@ -170,7 +185,12 @@ function PostDetailPage() {
       const contentWrapElement = contentWrapRef.current;
       const railElement = railRef.current;
 
-      if (!slotElement || !headerElement || !contentWrapElement || !railElement) {
+      if (
+        !slotElement ||
+        !headerElement ||
+        !contentWrapElement ||
+        !railElement
+      ) {
         setRailStyle({});
         return;
       }
@@ -183,8 +203,15 @@ function PostDetailPage() {
       const headerMarginTop = parseFloat(headerStyles.marginTop) || 0;
       const headerMarginBottom = parseFloat(headerStyles.marginBottom) || 0;
 
-      const desiredTopOffset = Math.round(headerRect.top + headerRect.height + headerMarginTop + headerMarginBottom);
-      const maxTopOffset = Math.round(contentWrapRect.bottom - railRect.height - 8);
+      const desiredTopOffset = Math.round(
+        headerRect.top +
+          headerRect.height +
+          headerMarginTop +
+          headerMarginBottom,
+      );
+      const maxTopOffset = Math.round(
+        contentWrapRect.bottom - railRect.height - 8,
+      );
       const viewportTopOffset = Math.min(desiredTopOffset, maxTopOffset);
       const viewportLeftOffset = Math.max(0, Math.round(rect.left - 60));
 
@@ -210,7 +237,10 @@ function PostDetailPage() {
     syncRailStyle();
     window.addEventListener("resize", scheduleRailSync);
 
-    const railResizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleRailSync) : null;
+    const railResizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(scheduleRailSync)
+        : null;
 
     if (railResizeObserver) {
       if (railSlotRef.current) {
@@ -256,8 +286,16 @@ function PostDetailPage() {
               return { key: tag, label: tag };
             }
 
-            const key = String(tag?.tagId ?? tag?.id ?? tag?.name ?? tag?.tag ?? JSON.stringify(tag));
-            const label = String(tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? key);
+            const key = String(
+              tag?.tagId ??
+                tag?.id ??
+                tag?.name ??
+                tag?.tag ??
+                JSON.stringify(tag),
+            );
+            const label = String(
+              tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? key,
+            );
 
             return { key, label };
           })
@@ -336,8 +374,6 @@ function PostDetailPage() {
       const result = await togglePostBookmark(post.postId);
       const nextBookmarked = Boolean(result?.data);
       setBookmarked(nextBookmarked);
-
-    
     } catch (error) {
       console.error("togglePostBookmark error:", error);
       alert("스크랩 처리 중 오류가 발생했습니다.");
@@ -355,7 +391,7 @@ function PostDetailPage() {
         await navigator.clipboard.writeText(url);
         return;
       }
-      
+
       // 2. Fallback: ExecCommand
       const textArea = document.createElement("textarea");
       textArea.value = url;
@@ -473,6 +509,8 @@ function PostDetailPage() {
         railStyle={railStyle}
       />
 
+      {post?.postId && <RecommendedPostList postId={post.postId} />}
+
       {post?.postId && (
         <CommentSection postId={post.postId} postAuthorId={post.memberId} />
       )}
@@ -482,11 +520,16 @@ function PostDetailPage() {
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
           style={{ backgroundColor: "rgba(0, 0, 0, 0.35)", zIndex: 1050 }}
         >
-          <div className="bg-white rounded-4 shadow p-4" style={{ width: "min(92vw, 420px)" }}>
+          <div
+            className="bg-white rounded-4 shadow p-4"
+            style={{ width: "min(92vw, 420px)" }}
+          >
             <div className="fw-bold mb-2" style={{ fontSize: "1.05rem" }}>
               삭제하시겠습니까?
             </div>
-            <div className="text-muted small mb-4">삭제한 게시글은 복구되지 않을 수 있습니다.</div>
+            <div className="text-muted small mb-4">
+              삭제한 게시글은 복구되지 않을 수 있습니다.
+            </div>
             <div className="d-flex justify-content-end gap-2">
               <button
                 type="button"
