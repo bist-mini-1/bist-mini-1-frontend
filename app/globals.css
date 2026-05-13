@@ -346,13 +346,13 @@ a {
 }
 
 .post-detail-title {
-  margin: 0 auto 18px;
+  margin: 0 0 18px;
   max-width: 100%;
   font-size: clamp(2rem, 4.6vw, 3.4rem);
   font-weight: 900;
   line-height: 1.18;
   letter-spacing: -0.04em;
-  text-align: center;
+  text-align: left;
   color: #1c1f23;
 }
 

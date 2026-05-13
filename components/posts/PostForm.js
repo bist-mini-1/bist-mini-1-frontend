@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { uploadFiles } from "@/api/fileApi";
 import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
@@ -37,6 +37,15 @@ const toFormValues = (initialValues) => ({
   content: initialValues?.content ?? "",
 });
 
+const extractMarkdownImageUrls = (content) => {
+  if (!content) {
+    return [];
+  }
+
+  const pattern = /!\[.*?\]\((.*?)\)/g;
+  return [...content.matchAll(pattern)].map((match) => match[1]).filter(Boolean);
+};
+
 export default function PostForm({
   initialValues = emptyForm,
   onSubmit,
@@ -55,23 +64,12 @@ export default function PostForm({
   const [content, setContent] = useState(() => initialValues?.content ?? "");
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState([]);
-
-  // 수정 폼에서 기존 본문에 포함된 이미지들을 추출하여 썸네일 선택지에 추가
-  useEffect(() => {
-    if (initialValues?.content) {
-      const pattern = /!\[.*?\]\((.*?)\)/g;
-      const matches = [...initialValues.content.matchAll(pattern)];
-      const urls = matches.map(m => m[1]).filter(Boolean);
-      
-      if (urls.length > 0) {
-        setUploadedImages(prev => {
-          const combined = [...prev, ...urls];
-          return [...new Set(combined)]; // 중복 제거
-        });
-      }
-    }
-  }, [initialValues]);
+  const [uploadedImages, setUploadedImages] = useState(() => extractMarkdownImageUrls(initialValues?.content));
+  const initialContentImages = useMemo(() => extractMarkdownImageUrls(initialValues?.content), [initialValues?.content]);
+  const allUploadedImages = useMemo(
+    () => [...new Set([...initialContentImages, ...uploadedImages])],
+    [initialContentImages, uploadedImages]
+  );
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -143,6 +141,113 @@ export default function PostForm({
   const handleImageInputChange = async (event) => {
     const file = event.target.files?.[0];
     await insertUploadedImage(file);
+  };
+
+  // 서버 응답에서 첨부 id 추출 (여러 필드명에 대응)
+  const extractAttachmentId = (item) => {
+    return item?.attachmentId || item?.id || item?.attachment_id || item?.fileId || item?.file_id || null;
+  };
+
+  const humanFileSize = (bytes) => {
+    if (!bytes && bytes !== 0) return "";
+    const thresh = 1024;
+    if (Math.abs(bytes) < thresh) return bytes + " B";
+    const units = ["KB", "MB", "GB", "TB"];
+    let u = -1;
+    do {
+      bytes /= thresh;
+      ++u;
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return bytes.toFixed(1) + " " + units[u];
+  };
+
+  const insertMarkdownAtEnd = (markdown) => {
+    setContent((current) => {
+      if (!current.trim()) return markdown;
+      return `${current.trimEnd()}\n\n${markdown}`;
+    });
+  };
+
+  const handleFilesUploadAndInsert = async (files) => {
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const fileArray = Array.from(files);
+      const uploadPromises = fileArray.map((file) => {
+        const isImage = String(file.type || "").startsWith("image/");
+        return uploadFiles([file], isImage ? "IMAGE" : "FILE").then((res) => ({ res, file, isImage }));
+      });
+
+      const results = await Promise.all(uploadPromises);
+
+      results.forEach(({ res, file, isImage }) => {
+        const info = res?.[0] ?? {};
+        const attachmentId = extractAttachmentId(info);
+        const fileUrl = info?.fileUrl || info?.url || null;
+
+        if (isImage) {
+          if (attachmentId) {
+            const altText = file.name?.replace(/\.[^.]+$/, "") || "image";
+            insertMarkdownAtEnd(`![${altText}](/api/attachments/${attachmentId}/image)`);
+            setUploadedImages((prev) => [...new Set([...prev, `/api/attachments/${attachmentId}/image`])]);
+            setForm((f) => {
+              if (!f.thumbnail || f.thumbnail.trim() === "") {
+                return { ...f, thumbnail: `/api/attachments/${attachmentId}/image` };
+              }
+              return f;
+            });
+          } else if (fileUrl) {
+            const altText = file.name?.replace(/\.[^.]+$/, "") || "image";
+            insertMarkdownAtEnd(`![${altText}](${fileUrl})`);
+            setUploadedImages((prev) => [...new Set([...prev, fileUrl])]);
+          }
+        } else {
+          if (attachmentId) {
+            const html = `<div class="attachment-block"><a class="attachment-download" href="/api/attachments/${attachmentId}/download" data-attachment-id="${attachmentId}"><div class="attachment-icon">📎</div><div class="attachment-info"><div class="attachment-name">${file.name}</div><div class="attachment-meta">${humanFileSize(file.size)}</div></div></a></div>`;
+            insertMarkdownAtEnd(html);
+          } else if (fileUrl) {
+            const html = `<div class="attachment-block"><a class="attachment-download" href="${fileUrl}" data-attachment-name="${file.name}"><div class="attachment-icon">📎</div><div class="attachment-info"><div class="attachment-name">${file.name}</div><div class="attachment-meta">${humanFileSize(file.size)}</div></div></a></div>`;
+            insertMarkdownAtEnd(html);
+          }
+        }
+      });
+    } catch (err) {
+      console.error("파일 업로드 중 오류:", err);
+      alert("파일 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePaste = async (e) => {
+    if (!e?.clipboardData) return;
+    const items = e.clipboardData.items;
+    if (!items) return;
+
+    const files = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.kind === "file") {
+        const file = it.getAsFile();
+        if (file) files.push(file);
+      }
+    }
+
+    if (files.length > 0) {
+      e.preventDefault();
+      await handleFilesUploadAndInsert(files);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    const dt = e.dataTransfer;
+    if (!dt) return;
+    const files = dt.files;
+    if (files && files.length > 0) {
+      await handleFilesUploadAndInsert(files);
+    }
   };
 
   const openImagePicker = () => {
@@ -247,6 +352,8 @@ export default function PostForm({
                   content={content}
                   setContent={setContent}
                   getBackendAbsoluteUrl={getBackendAbsoluteUrl}
+                  onPaste={handlePaste}
+                  onDrop={handleDrop}
                 />
               </div>
             </div>
@@ -271,11 +378,11 @@ export default function PostForm({
             <label className="form-label fw-semibold">썸네일 선택</label>
 
 
-            {uploadedImages.length > 0 ? (
+            {allUploadedImages.length > 0 ? (
               <div className="mt-2">
                 <div className="small text-muted mb-2">본문에 삽입된 이미지 중 하나를 썸네일로 선택할 수 있습니다 (첫 번째 이미지가 기본값):</div>
                 <div className="d-flex flex-wrap gap-2">
-                  {uploadedImages.map((url, idx) => (
+                  {allUploadedImages.map((url, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -287,6 +394,7 @@ export default function PostForm({
                         setForm((prev) => ({ ...prev, thumbnail: url }))
                       }
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={getBackendAbsoluteUrl(url)}
                         alt="Thumbnail suggestion"
@@ -349,7 +457,7 @@ export default function PostForm({
 }
 
 // 에디터 글자 지워짐/커서 점프 현상 방지를 위해 메모이제이션 컴포넌트로 분리
-const PostMDEditor = memo(({ content, setContent, getBackendAbsoluteUrl }) => {
+const PostMDEditor = memo(({ content, setContent, getBackendAbsoluteUrl, onPaste, onDrop }) => {
   const previewOptions = useMemo(() => ({
     components: {
       img: ({ src, alt }) => {
@@ -359,6 +467,7 @@ const PostMDEditor = memo(({ content, setContent, getBackendAbsoluteUrl }) => {
           absoluteSrc = getBackendAbsoluteUrl(src);
         }
         return (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img 
             src={absoluteSrc} 
             alt={alt || "이미지"} 
@@ -383,6 +492,9 @@ const PostMDEditor = memo(({ content, setContent, getBackendAbsoluteUrl }) => {
         autoComplete: "off",
         autoCorrect: "off",
         autoCapitalize: "off",
+        onPaste: onPaste,
+        onDrop: onDrop,
+        onDragOver: (e) => e.preventDefault(),
         style: {
           fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
           fontSize: "15px",
@@ -393,4 +505,4 @@ const PostMDEditor = memo(({ content, setContent, getBackendAbsoluteUrl }) => {
   );
 });
 
-PostMDEditor.displayName = "PostMDEditor";
+PostMDEditor.displayName = "PostMDEditor";

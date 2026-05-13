@@ -3,8 +3,89 @@
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Fragment } from "react";
 
 import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
+
+const ATTACHMENT_BLOCK_REGEX = /<div class="attachment-block"><a class="attachment-download" href="([^"]+)"(?: data-attachment-id="([^"]+)")?(?: data-attachment-name="([^"]+)")?><div class="attachment-icon">📎<\/div><div class="attachment-info"><div class="attachment-name">([\s\S]*?)<\/div><div class="attachment-meta">([\s\S]*?)<\/div><\/div><\/a><\/div>/g;
+
+function getAttachmentDisplayHref(href) {
+  if (!href || !String(href).trim()) {
+    return "#";
+  }
+
+  if (href.startsWith("/api/attachments")) {
+    return getBackendAbsoluteUrl(href);
+  }
+
+  return href;
+}
+
+function AttachmentBlock({ href, name, meta, attachmentId }) {
+  return (
+    <div className="attachment-block" data-attachment-id={attachmentId || undefined}>
+      <a className="attachment-download" href={getAttachmentDisplayHref(href)}>
+        <div className="attachment-icon">📎</div>
+        <div className="attachment-info">
+          <div className="attachment-name">{name || "첨부파일"}</div>
+          <div className="attachment-meta">{meta || "다운로드"}</div>
+        </div>
+      </a>
+    </div>
+  );
+}
+
+function renderPostContent(content, markdownComponents) {
+  const nodes = [];
+  let lastIndex = 0;
+  let matchIndex = 0;
+
+  for (const match of content.matchAll(ATTACHMENT_BLOCK_REGEX)) {
+    const matchStart = match.index ?? 0;
+    const matchEnd = matchStart + match[0].length;
+
+    if (matchStart > lastIndex) {
+      const markdownChunk = content.slice(lastIndex, matchStart);
+      if (markdownChunk.trim()) {
+        nodes.push(
+          <ReactMarkdown key={`markdown-${matchIndex}`} remarkPlugins={[remarkGfm]} components={markdownComponents}>
+            {markdownChunk}
+          </ReactMarkdown>
+        );
+        matchIndex += 1;
+      }
+    }
+
+    nodes.push(
+      <AttachmentBlock
+        key={`attachment-${matchIndex}`}
+        href={match[1]}
+        attachmentId={match[2]}
+        name={match[4] || match[3] || "첨부파일"}
+        meta={match[5] || "다운로드"}
+      />
+    );
+    matchIndex += 1;
+    lastIndex = matchEnd;
+  }
+
+  if (lastIndex < content.length) {
+    const markdownChunk = content.slice(lastIndex);
+    if (markdownChunk.trim()) {
+      nodes.push(
+        <ReactMarkdown key={`markdown-${matchIndex}`} remarkPlugins={[remarkGfm]} components={markdownComponents}>
+          {markdownChunk}
+        </ReactMarkdown>
+      );
+    }
+  }
+
+  if (nodes.length === 0) {
+    return null;
+  }
+
+  return <Fragment>{nodes}</Fragment>;
+}
 
 
 function getAuthorDisplayName(post) {
@@ -88,29 +169,26 @@ function PostBodyPanel({ content }) {
     return <div className="text-muted mb-4">본문이 없습니다.</div>;
   }
 
+  const markdownComponents = {
+    img: ({ src, alt }) => {
+      if (!src || !String(src).trim()) {
+        return null;
+      }
+
+      let absoluteSrc = src;
+      if (src.startsWith("/api/attachments")) {
+        absoluteSrc = getBackendAbsoluteUrl(src);
+      }
+
+      /* eslint-disable-next-line @next/next/no-img-element */
+      return <img src={absoluteSrc} alt={alt || "게시글 이미지"} loading="eager" />;
+    },
+  };
+
   return (
     <div className="rounded-4 mb-4 post-content-panel">
       <div className="post-markdown-body">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            img: ({ src, alt }) => {
-              if (!src || !String(src).trim()) {
-                return null;
-              }
-
-              // 상대 경로를 절대 경로로 변환
-              let absoluteSrc = src;
-              if (src.startsWith("/api/attachments")) {
-                absoluteSrc = getBackendAbsoluteUrl(src);
-              }
-
-              return <img src={absoluteSrc} alt={alt || "게시글 이미지"} loading="eager" />;
-            },
-          }}
-        >
-          {content}
-        </ReactMarkdown>
+        {renderPostContent(content, markdownComponents)}
       </div>
     </div>
   );
