@@ -9,16 +9,16 @@ import { getMemberIdFromToken } from "../../utils/tokenUtils";
 
 const NAV = [
   { href: "/Mypage/character", label: "캐릭터 성장", icon: "bi-person-badge-fill" },
-  { href: "/Mypage/grass",     label: "잔디",        icon: "bi-calendar2-check-fill" },
-  { href: "/Mypage/posts",     label: "게시글 조회", icon: "bi-collection-fill" },
-  { href: "/Mypage/profile",   label: "설정",        icon: "bi-sliders2" },
+  { href: "/Mypage/grass", label: "잔디", icon: "bi-calendar2-check-fill" },
+  { href: "/Mypage/posts", label: "게시글 조회", icon: "bi-collection-fill" },
+  { href: "/Mypage/profile", label: "설정", icon: "bi-gear-fill" },
 ];
 
 export default function MyPageLayout({ children }) {
   const pathname = usePathname();
-  const router   = useRouter();
-  const [nickname, setNickname]     = useState("");
-  const [avatarUrl, setAvatarUrl]   = useState(null);
+  const router = useRouter();
+  const [nickname, setNickname] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const [followCount, setFollowCount] = useState({ followerCount: 0, followingCount: 0 });
 
   useEffect(() => {
@@ -96,10 +96,10 @@ export default function MyPageLayout({ children }) {
         <div style={{ padding: "28px 20px 20px", textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
           <div style={{ width: 58, height: 58, borderRadius: "50%", overflow: "hidden", border: "2.5px solid rgba(255,255,255,0.5)", marginBottom: 10, margin: "0 auto 10px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {avatarUrl ? (
-              <img 
-                src={avatarUrl} 
+              <img
+                src={avatarUrl}
                 alt="프로필"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={() => setAvatarUrl(null)}
               />
             ) : (
@@ -113,10 +113,10 @@ export default function MyPageLayout({ children }) {
           </div>
 
           {/* 팔로워 / 팔로잉 숫자 — 클릭 시 목록 페이지로 이동 */}
-          <div style={{ 
-            display: "flex", 
-            justifyContent: "center", 
-            gap: 12, 
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 12,
             marginBottom: 6,
             background: "rgba(0,0,0,0.1)",
             padding: "10px 6px",
