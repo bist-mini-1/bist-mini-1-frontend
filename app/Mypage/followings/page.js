@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getFollowings, unfollowUser } from "../../../api/mypageApi";
 import { getMemberIdFromToken } from "../../../utils/tokenUtils";
+import { getBackendAbsoluteUrl } from "../../../utils/urlUtils";
 import Pagination from "../../../components/common/Pagination";
 
 const GREEN      = "#3cb878";
@@ -38,7 +39,10 @@ export default function FollowingsPage() {
           return;
         }
         const res = await getFollowings(memberId);
-        setUsers(res?.users ?? []);
+        
+        // API가 {users: []} 형태인지 아니면 배열 [] 그 자체인지에 따라 유연하게 처리
+        const followingList = Array.isArray(res) ? res : (res?.users ?? []);
+        setUsers(followingList);
       } catch (e) {
         setError("팔로잉 목록을 불러오는 중 오류가 발생했습니다.");
         console.error(e);
@@ -227,7 +231,7 @@ function UserCard({ user, onUnfollowClick }) {
       }}
     >
       {user.profileImage ? (
-        <Image src={user.profileImage} alt={user.nickname} width={46} height={46} unoptimized
+        <Image src={getBackendAbsoluteUrl(user.profileImage)} alt={user.nickname} width={46} height={46} unoptimized
           style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #a5d6a7", flexShrink: 0 }} />
       ) : (
         <div style={{

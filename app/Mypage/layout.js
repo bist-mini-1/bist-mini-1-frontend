@@ -25,42 +25,6 @@ export default function MyPageLayout({ children }) {
     const token = localStorage.getItem("accessToken");
     if (!token) { router.push("/login"); return; }
 
-    // 팔로워/팔로잉 수 조회 + 초기 닉네임/아바타 세팅
-    const init = async () => {
-      setNickname(localStorage.getItem("nickname") || "");
-      try {
-        const blob = await getMyProfileImage();
-        setAvatarUrl(URL.createObjectURL(blob));
-      } catch (e) {
-        setAvatarUrl(null);
-      }
-
-      const mid = getMemberIdFromToken(token);
-      if (mid) {
-        try {
-          const counts = await getFollowCount(mid);
-          if (counts) setFollowCount(counts);
-        } catch {
-          // 조회 실패 시 기본값 유지
-        }
-      }
-
-      try {
-        const blob = await getMyProfileImage();
-        setAvatarUrl(URL.createObjectURL(blob));
-      } catch (e) {
-        setAvatarUrl(null);
-      }
-
-      // 프로필 정보 추가 동기화 (실패해도 무시)
-      try {
-        await getMyProfile();
-      } catch {
-        // 무시
-      }
-    };
-    init();
-
     const fetchImg = async () => {
       try {
         const blob = await getMyProfileImage();
@@ -69,6 +33,26 @@ export default function MyPageLayout({ children }) {
         setAvatarUrl(null);
       }
     };
+
+    // 팔로워/팔로잉 수 조회 + 초기 닉네임/아바타 세팅
+    const init = async () => {
+      const mid = getMemberIdFromToken(token);
+      if (mid) {
+        localStorage.setItem("memberId", mid);
+        try {
+          const counts = await getFollowCount(mid);
+          if (counts) setFollowCount(counts);
+        } catch (e) { console.error(e); }
+      }
+
+      setNickname(localStorage.getItem("nickname") || "");
+      fetchImg();
+
+      try {
+        await getMyProfile();
+      } catch { }
+    };
+    init();
 
     const sync = () => {
       setNickname(localStorage.getItem("nickname") || "");
