@@ -56,3 +56,13 @@ export const deletePost = async (postId) => {
 
   return response.data;
 };
+
+export const getRecommendedPosts = async (postId, limit = 4) => {
+  const response = await axiosInstance.get(`/api/posts/${postId}/recommended`, {
+    params: {
+      limit,
+    },
+  });
+
+  return response.data;
+};
