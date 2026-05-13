@@ -11,11 +11,30 @@ import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
 
 const stripMarkdown = (text) => {
   if (!text) return "";
-  return text
-    .replace(/!\[.*?\]\(.*?\)/g, "") // 이미지 제거
-    .replace(/\[.*?\]\(.*?\)/g, "") // 링크 제거
-    .replace(/[#*`~_>]/g, "") // 마크다운 기호 제거
-    .replace(/\s+/g, " ") // 공백 정리
+  return String(text)
+    // 첨부 블록은 내부 텍스트까지 통째로 제거
+    .replace(/<div[^>]*class=["']attachment-block["'][^>]*>[\s\S]*?<\/a>\s*<\/div>/gi, "")
+    // 이스케이프된 첨부 블록도 함께 제거
+    .replace(/&lt;div[^&]*class=["']attachment-block["'][^&]*&gt;[\s\S]*?&lt;\/a&gt;\s*&lt;\/div&gt;/gi, "")
+    // 이스케이프된 HTML이 섞여 있어도 먼저 원형에 가깝게 복원
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+     // HTML 시작 조각이나 잘린 태그 조각 제거
+     .replace(/<[^>\n]*(?:>|$)/g, "")
+     // HTML 속성 조각이 남아 있으면 제거
+     .replace(/\b(?:href|src|class|id|style|data-[\w-]+)=(?:"[^"]*"|'[^']*'|[^\s<>]+)/gi, "")
+    // 이미지 / 링크 마크다운 제거
+    .replace(/!\[.*?\]\(.*?\)/g, "")
+    .replace(/\[.*?\]\(.*?\)/g, "")
+    // 남아있는 HTML 태그 제거
+    .replace(/<[^>]+>/g, "")
+    // 혹시 다시 이스케이프 형태로 남은 태그 제거
+    .replace(/&lt;[^&]+&gt;/g, "")
+    // 마크다운 기호 제거
+    .replace(/[#*`~_>]/g, "")
+    // 공백 정리
+    .replace(/\s+/g, " ")
     .trim();
 };
 
