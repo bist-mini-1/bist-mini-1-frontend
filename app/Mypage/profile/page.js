@@ -47,9 +47,9 @@ export default function ProfilePage() {
   const fileRef = useRef(null);
 
   /* 관심 태그 */
-  const [allTags,         setAllTags]         = useState([]);
-  const [selectedTagIds,  setSelectedTagIds]  = useState([]);
-  const [tagSaving,       setTagSaving]       = useState(false);
+  const [allTags, setAllTags] = useState([]);
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
+  const [tagSaving, setTagSaving] = useState(false);
 
   /* ── 프로필 불러오기 ── */
   useEffect(() => {
@@ -258,9 +258,9 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 20, fontWeight: 800, color: "#222", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-          <i className="bi bi-sliders2" style={{ color: "#555" }} />
+          <i className="bi bi-gear-fill" style={{ color: GREEN }} />
           설정
         </h2>
         <p style={{ fontSize: 13, color: "#888", margin: "6px 0 0" }}>개인 정보를 관리해요</p>
@@ -445,7 +445,7 @@ export default function ProfilePage() {
             <div>
               <SectionTitle><i className="bi bi-hash" style={{ marginRight: 6 }} />관심 태그 수정</SectionTitle>
               <p style={{ fontSize: 12, color: "#888", margin: "4px 0 0" }}>
-                관심 있는 태그를 선택해 보세요. 
+                관심 있는 태그를 선택해 보세요.
               </p>
             </div>
             <span style={{
