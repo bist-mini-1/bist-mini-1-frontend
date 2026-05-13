@@ -337,11 +337,7 @@ function PostDetailPage() {
       const nextBookmarked = Boolean(result?.data);
       setBookmarked(nextBookmarked);
 
-      if (nextBookmarked) {
-        alert("게시글을 스크랩했습니다.");
-      } else {
-        alert("스크랩을 취소했습니다.");
-      }
+    
     } catch (error) {
       console.error("togglePostBookmark error:", error);
       alert("스크랩 처리 중 오류가 발생했습니다.");
@@ -357,7 +353,6 @@ function PostDetailPage() {
       // 1. Modern Navigator API
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
-        alert("게시글 링크가 복사되었습니다.");
         return;
       }
       

@@ -64,12 +64,8 @@ export default function PostForm({
   const [content, setContent] = useState(() => initialValues?.content ?? "");
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState(() => extractMarkdownImageUrls(initialValues?.content));
-  const initialContentImages = useMemo(() => extractMarkdownImageUrls(initialValues?.content), [initialValues?.content]);
-  const allUploadedImages = useMemo(
-    () => [...new Set([...initialContentImages, ...uploadedImages])],
-    [initialContentImages, uploadedImages]
-  );
+  const contentImages = useMemo(() => extractMarkdownImageUrls(content), [content]);
+  const allUploadedImages = useMemo(() => [...new Set(contentImages)], [contentImages]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -115,17 +111,12 @@ export default function PostForm({
         return `${current.trimEnd()}\n\n${imageMarkdown}`;
       });
 
-      // 업로드된 이미지 목록에 추가 (썸네일 선택용)
-      setUploadedImages((prev) => {
-        const next = [...prev, imageUrl];
-        // 썸네일이 아직 설정되지 않았다면, 첫 번째 업로드 이미지를 자동으로 썸네일로 설정
-        setForm((f) => {
-          if (!f.thumbnail || f.thumbnail.trim() === "") {
-            return { ...f, thumbnail: imageUrl };
-          }
-          return f;
-        });
-        return next;
+      // content에 반영된 이미지가 썸네일 후보가 되므로, 썸네일이 비어 있으면 자동 설정
+      setForm((f) => {
+        if (!f.thumbnail || f.thumbnail.trim() === "") {
+          return { ...f, thumbnail: imageUrl };
+        }
+        return f;
       });
     } catch (error) {
       console.error("Image upload error:", error);
@@ -168,6 +159,24 @@ export default function PostForm({
     });
   };
 
+  const handleEditorContentChange = (nextContent) => {
+    const normalizedContent = nextContent ?? "";
+    const nextImages = extractMarkdownImageUrls(normalizedContent);
+
+    setContent(normalizedContent);
+
+    setForm((current) => {
+      if (current.thumbnail && !nextImages.includes(current.thumbnail)) {
+        return {
+          ...current,
+          thumbnail: nextImages[0] ?? "",
+        };
+      }
+
+      return current;
+    });
+  };
+
   const handleFilesUploadAndInsert = async (files) => {
     if (!files || files.length === 0) return;
 
@@ -190,7 +199,6 @@ export default function PostForm({
           if (attachmentId) {
             const altText = file.name?.replace(/\.[^.]+$/, "") || "image";
             insertMarkdownAtEnd(`![${altText}](/api/attachments/${attachmentId}/image)`);
-            setUploadedImages((prev) => [...new Set([...prev, `/api/attachments/${attachmentId}/image`])]);
             setForm((f) => {
               if (!f.thumbnail || f.thumbnail.trim() === "") {
                 return { ...f, thumbnail: `/api/attachments/${attachmentId}/image` };
@@ -200,7 +208,6 @@ export default function PostForm({
           } else if (fileUrl) {
             const altText = file.name?.replace(/\.[^.]+$/, "") || "image";
             insertMarkdownAtEnd(`![${altText}](${fileUrl})`);
-            setUploadedImages((prev) => [...new Set([...prev, fileUrl])]);
           }
         } else {
           if (attachmentId) {
@@ -350,7 +357,7 @@ export default function PostForm({
               <div data-color-mode="light">
                 <PostMDEditor
                   content={content}
-                  setContent={setContent}
+                  setContent={handleEditorContentChange}
                   getBackendAbsoluteUrl={getBackendAbsoluteUrl}
                   onPaste={handlePaste}
                   onDrop={handleDrop}
