@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getFollowers, getFollowings, followUser } from "../../../api/mypageApi";
 import { getMemberIdFromToken } from "../../../utils/tokenUtils";
+import { getBackendAbsoluteUrl } from "../../../utils/urlUtils";
 import Pagination from "../../../components/common/Pagination";
 
 const GREEN      = "#3cb878";
@@ -38,17 +39,18 @@ export default function FollowersPage() {
           return;
         }
 
-        // 팔로워 목록 + 내 팔로잉 목록 동시 로드
-        const [followersRes, followingsRes] = await Promise.all([
-          getFollowers(memberId),
-          getFollowings(memberId),
-        ]);
+        const followersRes = await getFollowers(memberId);
+        const followingsRes = await getFollowings(memberId);
 
-        setUsers(followersRes?.users ?? []);
+        // API가 {users: []} 형태인지 아니면 배열 [] 그 자체인지에 따라 유연하게 처리
+        const followerList = Array.isArray(followersRes) ? followersRes : (followersRes?.users ?? []);
+        const followingList = Array.isArray(followingsRes) ? followingsRes : (followingsRes?.users ?? []);
+
+        setUsers(followerList);
 
         // 내가 팔로우하는 memberId Set 구성
         const followingSet = new Set(
-          (followingsRes?.users ?? []).map((u) => String(u.memberId))
+          followingList.map((u) => String(u.memberId))
         );
         setMyFollowings(followingSet);
       } catch (e) {
@@ -210,7 +212,7 @@ function UserCard({ user, isFollowingBack, onMutualFollow }) {
       }}
     >
       {user.profileImage ? (
-        <Image src={user.profileImage} alt={user.nickname} width={46} height={46} unoptimized
+        <Image src={getBackendAbsoluteUrl(user.profileImage)} alt={user.nickname} width={46} height={46} unoptimized
           style={{ borderRadius: "50%", objectFit: "cover", border: "2px solid #a5d6a7", flexShrink: 0 }} />
       ) : (
         <div style={{

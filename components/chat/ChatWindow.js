@@ -4,6 +4,8 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getMessageHistory, markAsRead, updateMessage, deleteMessage } from '@/api/chatApi';
 
+import { getBackendAbsoluteUrl } from '@/utils/urlUtils';
+
 /**
  * 실시간 채팅 대화창 컴포넌트
  */
@@ -239,12 +241,13 @@ const ChatWindow = ({ room }) => {
                 {!isMine && (
                   <div className="me-2 mt-1" style={{ width: '30px', height: '30px', position: 'relative' }}>
                     <Image 
-                      src="/images/default-profile.png" 
+                      src={msg.senderProfileImage ? getBackendAbsoluteUrl(msg.senderProfileImage) : "/images/default-profile.png"} 
                       alt="p" 
                       className="rounded-circle" 
                       fill
                       style={{ objectFit: 'cover' }} 
                       sizes="30px"
+                      unoptimized
                     />
                   </div>
                 )}
@@ -326,6 +329,21 @@ const ChatWindow = ({ room }) => {
                     {!isMine && (
                       <div className="d-flex flex-column" style={{ fontSize: '10px', minWidth: '40px' }}>
                         <span className="text-muted">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                    )}
+                    
+                    {/* 내 메시지일 때 내 프로필 이미지 (오른쪽) */}
+                    {isMine && (
+                      <div className="ms-2 mt-1" style={{ width: '30px', height: '30px', position: 'relative' }}>
+                        <Image 
+                          src={msg.senderProfileImage ? getBackendAbsoluteUrl(msg.senderProfileImage) : "/images/default-profile.png"} 
+                          alt="p" 
+                          className="rounded-circle" 
+                          fill
+                          style={{ objectFit: 'cover' }} 
+                          sizes="30px"
+                          unoptimized
+                        />
                       </div>
                     )}
                   </div>

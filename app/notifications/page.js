@@ -11,15 +11,15 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const response = await getNotifications();
       setNotifications(response.data || []);
     } catch (error) {
       console.error("알림 목록 조회 실패:", error);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
@@ -29,7 +29,7 @@ export default function NotificationsPage() {
     }
 
     const handleRefresh = () => {
-      fetchNotifications();
+      fetchNotifications(true);
     };
 
     window.addEventListener("notificationsChanged", handleRefresh);

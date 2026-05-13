@@ -150,7 +150,9 @@ export default function NotificationBell() {
   };
 
   const getNotificationLink = (notification) => {
-    return notification.postId ? `/post/${notification.postId}` : "#";
+    if (notification.postId) return `/post/${notification.postId}`;
+    if (notification.type === "FOLLOW") return `/Mypage/user/${notification.senderId}`;
+    return "/notifications";
   };
 
   if (!authInfo.isLogin) return null;
