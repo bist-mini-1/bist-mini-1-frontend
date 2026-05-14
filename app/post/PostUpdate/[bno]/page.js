@@ -217,7 +217,7 @@ export default function PostUpdatePage() {
         showTempSave={false}
         title="게시글 수정"
         subtitle="POST UPDATE"
-        badgeText="title / content / tags / thumbnail"
+        // badgeText="title / content / tags / thumbnail"
         submitLabel="수정"
         cancelLabel="취소"
       />

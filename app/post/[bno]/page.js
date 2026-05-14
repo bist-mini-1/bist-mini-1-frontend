@@ -10,6 +10,7 @@ import {
 import {
   getUserProfile,
   getFollowCount,
+  getMyFollowings,
   followUser,
   unfollowUser,
 } from "@/api/mypageApi";
@@ -133,16 +134,31 @@ function PostDetailPage() {
 
     const fetchAuthorInfo = async () => {
       try {
-        const profile = await getUserProfile(post.memberId);
-        const followCount = await getFollowCount(post.memberId);
+        const [profile, followCount, myFollowings] = await Promise.all([
+          getUserProfile(post.memberId),
+          getFollowCount(post.memberId),
+          authInfo.isLogin ? getMyFollowings() : Promise.resolve(null),
+        ]);
+
+        const derivedFollowing =
+          profile?.isFollowing != null
+            ? Boolean(profile.isFollowing)
+            : Boolean(
+                (myFollowings?.users ?? []).some(
+                  (user) => String(user.memberId) === String(post.memberId),
+                ),
+              );
 
         if (isMounted) {
           setAuthorProfile(profile);
           setAuthorFollowCount(followCount);
-          setAuthorFollowing(profile?.isFollowing ?? false);
+          setAuthorFollowing(derivedFollowing);
         }
       } catch (error) {
         console.error("Failed to fetch author info:", error);
+        if (isMounted) {
+          setAuthorFollowing(false);
+        }
       }
     };
 
@@ -151,7 +167,7 @@ function PostDetailPage() {
     return () => {
       isMounted = false;
     };
-  }, [post?.memberId]);
+  }, [post?.memberId, authInfo.isLogin]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

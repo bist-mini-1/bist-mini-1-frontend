@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PostForm from "@/components/posts/PostForm";
 import useAuth from "@/hooks/useAuth";
-import { createPost } from "@/api/postApi";
+import { createPost, getTempPostDetail, getTempPostList, updatePost } from "@/api/postApi";
 
-const initialValues = {
+const initialValuesDefaults = {
   title: "",
   content: "",
   tags: [],
@@ -22,10 +22,110 @@ const extractPost = (response) => {
   return response.data ?? response.post ?? response.result ?? response;
 };
 
+const toFormValues = (post) => ({
+  title: post?.title ?? "",
+  content: post?.content ?? "",
+  tags: Array.isArray(post?.tags)
+    ? post.tags
+        .map((tag) => {
+          if (typeof tag === "string") {
+            return tag;
+          }
+
+          return tag?.name ?? tag?.tag ?? tag?.label ?? tag?.title ?? "";
+        })
+        .filter(Boolean)
+    : [],
+  thumbnail: post?.thumbnailUrl ?? post?.thumbnail ?? "",
+  isPublic: post?.isPublic ?? post?.is_public ?? "Y",
+});
+
 export default function PostWritePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { authInfo } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [tempPosts, setTempPosts] = useState([]);
+  const [formValues, setFormValues] = useState(initialValuesDefaults);
+  const [formKey, setFormKey] = useState("new");
+  const [activeDraftId, setActiveDraftId] = useState(null);
+  const draftId = searchParams.get("draftId");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadTempPosts = async () => {
+      if (!authInfo.isLogin) {
+        if (isMounted) {
+          setTempPosts([]);
+        }
+        return;
+      }
+
+      try {
+        const response = await getTempPostList();
+        const posts = extractPost(response) ?? [];
+        if (isMounted) {
+          setTempPosts(Array.isArray(posts) ? posts : []);
+        }
+      } catch (error) {
+        console.error("임시저장 목록 불러오기 실패:", error);
+        if (isMounted) {
+          setTempPosts([]);
+        }
+      }
+    };
+
+    void loadTempPosts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authInfo.isLogin]);
+
+  useEffect(() => {
+    if (!authInfo.isLogin || !draftId) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadDraft = async () => {
+      try {
+        const response = await getTempPostDetail(draftId);
+        const draft = extractPost(response);
+        if (draft && isMounted) {
+          setFormValues(toFormValues(draft));
+          setActiveDraftId(draft.postId);
+          setFormKey(String(draft.postId));
+        }
+      } catch (error) {
+        console.error("임시저장 불러오기 실패:", error);
+        if (isMounted) {
+          setFormValues(initialValuesDefaults);
+          setActiveDraftId(null);
+          setFormKey("new");
+        }
+      }
+    };
+
+    void loadDraft();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authInfo.isLogin, draftId]);
+
+  const handleLoadTempDraft = (draft) => {
+    if (!draft) {
+      return;
+    }
+
+    setFormValues(toFormValues(draft));
+    setActiveDraftId(draft.postId);
+    setFormKey(String(draft.postId));
+    router.replace(`/post/PostWrite?draftId=${draft.postId}`);
+  };
 
   const handleSubmit = async (payload, meta) => {
     if (!authInfo.isLogin) {
@@ -41,7 +141,7 @@ export default function PostWritePage() {
     try {
       setSubmitting(true);
 
-      const response = await createPost(payload);
+      const response = activeDraftId ? await updatePost(activeDraftId, payload) : await createPost(payload);
       const createdPost = extractPost(response);
       const nextPostId = createdPost?.postId ?? createdPost?.id ?? createdPost?.post_id;
 
@@ -51,6 +151,25 @@ export default function PostWritePage() {
         return;
       }
 
+      if (meta?.isTemp) {
+        setActiveDraftId(nextPostId);
+        setFormKey(String(nextPostId));
+        router.replace(`/post/PostWrite?draftId=${nextPostId}`);
+        alert("저장 완료되었습니다.");
+        setActiveDraftId(null);
+        setFormKey("new");
+        router.push("/");
+        return;
+      }
+
+      setActiveDraftId(null);
+      setFormKey("new");
+      router.replace("/post/PostWrite");
+      if (authInfo.isLogin) {
+        const response = await getTempPostList();
+        const posts = extractPost(response) ?? [];
+        setTempPosts(Array.isArray(posts) ? posts : []);
+      }
       router.push(`/post/${nextPostId}`);
     } catch (error) {
       console.error(error);
@@ -74,13 +193,16 @@ export default function PostWritePage() {
         </div>
       ) : (
         <PostForm
-          initialValues={initialValues}
+          key={formKey}
+          initialValues={formValues}
           onSubmit={handleSubmit}
           onCancel={() => router.back()}
           submitting={submitting}
+          tempDrafts={tempPosts}
+          onSelectTempDraft={handleLoadTempDraft}
+          draftId={activeDraftId}
           title="게시글 생성"
           subtitle="POST WRITE"
-          badgeText="title / content / tags / thumbnail"
           submitLabel="게시글 생성"
           tempLabel="임시 저장"
           cancelLabel="작성 취소"

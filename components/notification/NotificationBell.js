@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { EventSourcePolyfill } from "event-source-polyfill";
 import useAuth from "../../hooks/useAuth";
 import { getNotifications, markAsRead, markAllAsRead, deleteAllNotifications } from "../../api/notificationApi";
 import { followUser } from "../../api/mypageApi";
 import Link from "next/link";
+import { subscribeNotificationSse } from "../../utils/notificationSse";
 
 export default function NotificationBell() {
   const { authInfo } = useAuth();
@@ -60,41 +60,23 @@ export default function NotificationBell() {
   // 실시간 알림 구독 (SSE)
   useEffect(() => {
     if (!authInfo.isLogin) return;
-
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) return;
-
-    const getBaseURL = () => {
-      if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (typeof window !== "undefined" && window.location) {
-        const hostname = window.location.hostname;
-        if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-          return `http://${hostname}:8080`;
-        }
-      }
-      return "http://127.0.0.1:8080";
-    };
-
-    const apiUrl = `${getBaseURL()}/api/notifications/subscribe`;
-    console.log("SSE: Connecting to", apiUrl);
-    
-    const eventSource = new EventSourcePolyfill(apiUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      heartbeatTimeout: 30 * 60 * 1000,
-    });
-
-    eventSource.addEventListener("notification", (event) => {
-      try {
-        const newNotification = JSON.parse(event.data);
+    const unsubscribe = subscribeNotificationSse({
+      onNotification: (newNotification) => {
         console.log("SSE: Received new notification:", newNotification);
-        setNotifications((prev) => [newNotification, ...prev]);
+        setNotifications((prev) => {
+          if (prev.some((item) => item.notificationId === newNotification.notificationId)) {
+            return prev;
+          }
+          return [newNotification, ...prev];
+        });
         setUnreadCount((prev) => prev + 1);
-      } catch (error) {
+      },
+      onParseError: (error) => {
         console.error("SSE Parse Error:", error);
-      }
+      },
     });
 
-    return () => eventSource.close();
+    return () => unsubscribe();
   }, [authInfo.isLogin]);
 
   const handleToggle = () => setIsOpen(!isOpen);

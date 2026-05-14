@@ -33,6 +33,24 @@ export const getPostDetail = async (postId) => {
   return response.data;
 };
 
+export const getTempPostList = async () => {
+  const response = await axiosInstance.get("/api/posts/temp/list");
+
+  return response.data;
+};
+
+export const getTempPostDetail = async (postId) => {
+  const response = await axiosInstance.get(`/api/posts/temp/${postId}`);
+
+  return response.data;
+};
+
+export const deleteTempPost = async (postId) => {
+  const response = await axiosInstance.delete(`/api/posts/temp/${postId}`);
+
+  return response.data;
+};
+
 export const isMyPost = async (postId) => {
   const response = await axiosInstance.get(`/api/posts/${postId}/mine`) ;
 
