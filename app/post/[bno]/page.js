@@ -509,11 +509,11 @@ function PostDetailPage() {
         railStyle={railStyle}
       />
 
-      {post?.postId && <RecommendedPostList postId={post.postId} />}
-
       {post?.postId && (
         <CommentSection postId={post.postId} postAuthorId={post.memberId} />
       )}
+
+      {post?.postId && <RecommendedPostList postId={post.postId} />}
 
       {showDeleteConfirm ? (
         <div
