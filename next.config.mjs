@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ["192.168.5.3", "192.168.5.24", "192.168.5.19"],
+  allowedDevOrigins: ["192.168.5.3", "192.168.5.28", "192.168.5.50"],
   images: {
     remotePatterns: [
       {

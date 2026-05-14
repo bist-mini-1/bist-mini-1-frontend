@@ -5,7 +5,7 @@ import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
 import useAuth from '../../hooks/useAuth';
 import { getChatRooms } from '@/api/chatApi';
-import { EventSourcePolyfill } from 'event-source-polyfill';
+import { subscribeNotificationSse } from '../../utils/notificationSse';
 
 /**
  * 전역 채팅 플로팅 위젯
@@ -16,18 +16,6 @@ const ChatWidget = () => {
   const [currentRoom, setCurrentRoom] = useState(null); // 현재 보고 있는 채팅방
   const [totalUnread, setTotalUnread] = useState(0); // 전체 안 읽은 메시지 수
   const widgetRef = useRef(null);
-
-  // 백엔드 베이스 URL 결정 (NotificationBell.js 방식과 동일하게)
-  const getBaseURL = () => {
-    if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (typeof window !== "undefined" && window.location) {
-      const hostname = window.location.hostname;
-      if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-        return `http://${hostname}:8080`;
-      }
-    }
-    return "http://127.0.0.1:8080";
-  };
 
   // 안 읽은 메시지 총합 계산
   const fetchTotalUnread = async () => {
@@ -47,40 +35,24 @@ const ChatWidget = () => {
 
     fetchTotalUnread();
 
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) return;
-
-    const apiUrl = `${getBaseURL()}/api/notifications/subscribe`;
-    
-    const eventSource = new EventSourcePolyfill(apiUrl, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
+    const unsubscribe = subscribeNotificationSse({
+      onChatUnreadUpdate: () => {
+        console.log('SSE (ChatWidget): 채팅 안 읽음 카운트 갱신 이벤트 수신');
+        fetchTotalUnread();
       },
-      heartbeatTimeout: 30 * 60 * 1000 // 30분
+      onNotification: () => {
+        fetchTotalUnread();
+      },
+      onOpen: () => {
+        console.log('SSE (ChatWidget): Connected');
+      },
+      onError: (error) => {
+        console.error('SSE (ChatWidget): Connection error', error);
+      },
     });
-
-    // 채팅 안 읽음 카운트 갱신 이벤트 수신
-    eventSource.addEventListener('chat_unread_update', (event) => {
-      console.log('SSE (ChatWidget): 채팅 안 읽음 카운트 갱신 이벤트 수신');
-      fetchTotalUnread();
-    });
-
-    // 일반 알림 발생 시에도 전체 카운트 갱신
-    eventSource.addEventListener('notification', () => {
-      fetchTotalUnread();
-    });
-
-    eventSource.onopen = () => {
-      console.log('SSE (ChatWidget): Connected');
-    };
-
-    eventSource.onerror = (error) => {
-      console.error('SSE (ChatWidget): Connection error', error);
-      eventSource.close();
-    };
 
     return () => {
-      eventSource.close();
+      unsubscribe();
     };
   }, [authInfo.isLogin]);
 

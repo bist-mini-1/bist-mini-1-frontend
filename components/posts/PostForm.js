@@ -2,6 +2,7 @@
 
 import React, { memo, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { uploadFiles } from "@/api/fileApi";
 import { getBackendAbsoluteUrl } from "@/utils/urlUtils";
 
@@ -46,15 +47,23 @@ const extractMarkdownImageUrls = (content) => {
   return [...content.matchAll(pattern)].map((match) => match[1]).filter(Boolean);
 };
 
+const MAX_UPLOAD_SIZE = 200 * 1024 * 1024;
+
+const isOversizedFile = (file) => {
+  return Boolean(file && file.size > MAX_UPLOAD_SIZE);
+};
+
 export default function PostForm({
   initialValues = emptyForm,
   onSubmit,
   onCancel,
   submitting = false,
   showTempSave = true,
+  tempDrafts = [],
+  onSelectTempDraft,
+  draftId = null,
   title = "게시글 생성",
   subtitle = "POST WRITE",
-  badgeText = "title / content / tags / thumbnail",
   submitLabel = "게시글 생성",
   tempLabel = "임시 저장",
   cancelLabel = "작성 취소",
@@ -64,6 +73,7 @@ export default function PostForm({
   const [content, setContent] = useState(() => initialValues?.content ?? "");
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
+  const [isTempMenuOpen, setIsTempMenuOpen] = useState(false);
   const contentImages = useMemo(() => extractMarkdownImageUrls(content), [content]);
   const allUploadedImages = useMemo(() => [...new Set(contentImages)], [contentImages]);
 
@@ -83,6 +93,14 @@ export default function PostForm({
 
   const insertUploadedImage = async (file) => {
     if (!file) {
+      return;
+    }
+
+    if (isOversizedFile(file)) {
+      alert("파일 크기가 200MB를 초과해서 업로드할 수 없습니다.");
+      if (imageInputRef.current) {
+        imageInputRef.current.value = "";
+      }
       return;
     }
 
@@ -180,10 +198,30 @@ export default function PostForm({
   const handleFilesUploadAndInsert = async (files) => {
     if (!files || files.length === 0) return;
 
-    setUploading(true);
     try {
       const fileArray = Array.from(files);
-      const uploadPromises = fileArray.map((file) => {
+      const oversizedFiles = fileArray.filter(isOversizedFile);
+      const uploadableFiles = fileArray.filter((file) => !isOversizedFile(file));
+
+      if (oversizedFiles.length > 0) {
+        const firstNames = oversizedFiles
+          .slice(0, 3)
+          .map((file) => file.name || "이름 없는 파일")
+          .join(", ");
+        alert(
+          oversizedFiles.length === 1
+            ? `${firstNames} 파일은 200MB를 초과해서 업로드할 수 없습니다.`
+            : `200MB를 초과한 파일 ${oversizedFiles.length}개는 업로드할 수 없습니다.\n${firstNames}${oversizedFiles.length > 3 ? " ..." : ""}`
+        );
+      }
+
+      if (uploadableFiles.length === 0) {
+        return;
+      }
+
+      setUploading(true);
+
+      const uploadPromises = uploadableFiles.map((file) => {
         const isImage = String(file.type || "").startsWith("image/");
         return uploadFiles([file], isImage ? "IMAGE" : "FILE").then((res) => ({ res, file, isImage }));
       });
@@ -261,6 +299,30 @@ export default function PostForm({
     imageInputRef.current?.click();
   };
 
+  const formatDraftUpdatedAt = (value) => {
+    if (!value) return "";
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    return date.toLocaleString("ko-KR", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const handleSelectDraft = (draft) => {
+    if (typeof onSelectTempDraft === "function") {
+      onSelectTempDraft(draft);
+    }
+
+    setIsTempMenuOpen(false);
+  };
+
   const validate = () => {
     const nextErrors = {};
 
@@ -291,6 +353,7 @@ export default function PostForm({
     }
 
     const payload = {
+      tempPostId: draftId ?? null,
       title: form.title.trim(),
       content: content.trim(),
       is_public: form.isPublic,
@@ -306,18 +369,76 @@ export default function PostForm({
   };
 
   return (
-    <form className="card border-0 shadow-sm rounded-4 overflow-hidden">
-      <div className="card-header bg-white border-0 px-4 pt-4 pb-0">
+    <form className="card border-0 shadow-sm rounded-4 overflow-visible position-relative">
+      <div className="card-header bg-white border-0 px-4 pt-4 pb-0 position-relative" style={{ zIndex: 3 }}>
         <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
             <div className="text-muted small fw-semibold mb-1">{subtitle}</div>
             <h1 className="h3 fw-bold mb-0">{title}</h1>
           </div>
-          <div className="badge rounded-pill text-bg-light border text-dark px-3 py-2">{badgeText}</div>
+
+          {showTempSave && (
+            <div className="dropdown position-relative" style={{ zIndex: 3000 }}>
+              <button
+                type="button"
+                className="btn btn-outline-secondary dropdown-toggle px-3 py-2 text-nowrap"
+                onClick={() => setIsTempMenuOpen((prev) => !prev)}
+                aria-expanded={isTempMenuOpen}
+                disabled={submitting || uploading || tempDrafts.length === 0}
+                style={{ whiteSpace: "nowrap" }}
+              >
+                임시저장 불러오기
+                {tempDrafts.length > 0 ? ` (${tempDrafts.length})` : ""}
+              </button>
+
+              {isTempMenuOpen && tempDrafts.length > 0 ? (
+                <div className="dropdown-menu show shadow border-0 mt-2 p-2" style={{ width: "min(92vw, 420px)", right: 0, left: "auto" }}>
+                  <div className="px-2 pb-2 small text-muted fw-semibold">임시저장 글</div>
+                  <div style={{ maxHeight: "280px", overflowY: "auto" }}>
+                    {tempDrafts.map((draft) => (
+                      <button
+                        key={draft.postId}
+                        type="button"
+                        className="dropdown-item rounded-3 py-2 px-2"
+                        onClick={() => handleSelectDraft(draft)}
+                        style={{ whiteSpace: "normal" }}
+                      >
+                        <div className="d-flex justify-content-between gap-3 align-items-start">
+                          <div className="text-start flex-grow-1" style={{ minWidth: 0 }}>
+                            <div className="fw-semibold mb-1" style={{ lineHeight: 1.3, wordBreak: "break-word" }}>
+                              {draft.title || "제목 없음"}
+                            </div>
+                            <div
+                              className="small text-muted"
+                              style={{
+                                lineHeight: 1.35,
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {String(draft.content || "").replace(/<[^>]+>/g, " ").slice(0, 120) || "내용 미리보기 없음"}
+                            </div>
+                          </div>
+                          <div className="small text-muted text-nowrap flex-shrink-0">{formatDraftUpdatedAt(draft.updatedAt)}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="dropdown-divider" />
+                  <Link href="/post/PostTemp" className="dropdown-item text-center text-success fw-semibold">
+                    임시저장함 보기
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="card-body p-4 p-lg-5">
+      <div className="card-body p-4 p-lg-5 position-relative" style={{ zIndex: 1 }}>
         <div className="row g-4">
           <div className="col-12">
             <label className="form-label fw-semibold">제목</label>
@@ -344,14 +465,6 @@ export default function PostForm({
                   className="d-none"
                   onChange={handleImageInputChange}
                 />
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm"
-                  onClick={openImagePicker}
-                  disabled={uploading}
-                >
-                  이미지 삽입
-                </button>
               </div>
 
               <div data-color-mode="light">

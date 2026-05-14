@@ -20,6 +20,7 @@ export const uploadFiles = async (files, uploadType = "IMAGE") => {
     {
       params: { uploadType },
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 60000,
     }
   );
 

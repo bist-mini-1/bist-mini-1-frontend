@@ -382,7 +382,7 @@ export default function PostDetailView({
                 disabled={followLoading}
                 className={`post-author-follow-button ${authorFollowing ? "is-following" : ""}`}
               >
-                {followLoading ? "처리 중..." : authorFollowing ? "팔로잉" : "팔로우"}
+                {followLoading ? "처리 중..." : authorFollowing ? "팔로우 취소" : "팔로우"}
               </button>
             ) : null}
           </div>
