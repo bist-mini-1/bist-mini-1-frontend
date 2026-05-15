@@ -3,7 +3,11 @@ import axiosInstance from "./axiosInstance";
 export const login = async (data) => {
   const response = await axiosInstance.post("/api/members/login", data);
   return response.data;
-  
+};
+
+export const getMe = async () => {
+  const response = await axiosInstance.get("/api/members/me");
+  return response.data.data;
 };
 
 export const join = async (data) => {

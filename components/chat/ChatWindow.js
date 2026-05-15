@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getMessageHistory, markAsRead, updateMessage, deleteMessage } from '@/api/chatApi';
-
+import { getMe } from '@/api/memberApi';
 import { getBackendAbsoluteUrl } from '@/utils/urlUtils';
 
 /**
@@ -79,8 +79,15 @@ const ChatWindow = ({ room }) => {
 
   // 초기 로드 및 구독
   useEffect(() => {
-    const myId = localStorage.getItem('memberId');
-    if (myId) setMemberId(Number(myId));
+    const fetchMyInfo = async () => {
+      try {
+        const me = await getMe();
+        if (me && me.memberId) setMemberId(me.memberId);
+      } catch (error) {
+        console.error("내 정보 조회 실패:", error);
+      }
+    };
+    fetchMyInfo();
 
     setMessages([]);
     setPage(1);
@@ -126,7 +133,7 @@ const ChatWindow = ({ room }) => {
           } else {
             setMessages((prev) => [...prev, data]);
             setTimeout(scrollToBottom, 50);
-            if (data.senderId !== Number(localStorage.getItem('memberId'))) {
+            if (memberId && data.senderId !== memberId) {
               handleMarkAsRead();
             }
           }
@@ -165,9 +172,9 @@ const ChatWindow = ({ room }) => {
     e.preventDefault();
     if (!inputValue.trim() || !stompClient.current || !stompClient.current.connected) return;
 
+    const accessToken = localStorage.getItem('accessToken');
     const messageData = {
       roomId: room.roomId,
-      senderId: memberId,
       messageType: 'TEXT',
       content: inputValue
     };
@@ -175,6 +182,7 @@ const ChatWindow = ({ room }) => {
     stompClient.current.publish({
       destination: '/pub/chat/message',
       body: JSON.stringify(messageData),
+      headers: { Authorization: `Bearer ${accessToken}` }
     });
 
     setInputValue('');
