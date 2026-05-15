@@ -604,7 +604,7 @@ a {
 }
 
 /* 드롭다운 메뉴 클릭 시 파란색 배경 제거 */
-.dropdown-item:active, 
+.dropdown-item:active,
 .dropdown-item:focus,
 .dropdown-item.active {
   background-color: var(--slog-green-soft) !important;
@@ -622,7 +622,6 @@ a {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
 }
 
 .slog-error-card {
