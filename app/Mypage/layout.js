@@ -85,7 +85,7 @@ export default function MyPageLayout({ children }) {
       <aside style={{
         width: 210,
         flexShrink: 0,
-        background: "linear-gradient(175deg, #2e7d32 0%, #1b5e20 100%)",
+        background: "#2f8f5b",
         borderRadius: 16,
         overflow: "hidden",
         boxShadow: "0 4px 20px rgba(46,125,50,0.25)",

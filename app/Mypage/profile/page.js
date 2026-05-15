@@ -16,8 +16,8 @@ import { getTagList } from "../../../api/memberApi";
 import { getBackendAbsoluteUrl } from "../../../utils/urlUtils";
 import Image from "next/image";
 
-const GREEN = "#3cb878";
-const GREEN_DARK = "#2e7d32";
+const GREEN = "#2f8f5b";
+const GREEN_DARK = "#26744a";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -270,15 +270,18 @@ export default function ProfilePage() {
 
         {/* ── 프로필 사진 ── */}
         <div style={card}>
-          <SectionTitle><i className="bi bi-person-circle" style={{ marginRight: 6 }} />프로필 사진</SectionTitle>
+          <SectionTitle><i className="bi bi-person-circle" style={{ marginRight: 6, color: "#2f8f5b" }} />프로필 사진</SectionTitle>
           <div style={{ display: "flex", alignItems: "center", gap: 24, marginTop: 16 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{ width: 88, height: 88, borderRadius: "50%", overflow: "hidden", background: "linear-gradient(135deg, #c8e6c9, #a5d6a7)", display: "flex", alignItems: "center", justifyContent: "center", border: `3px solid ${GREEN}`, position: "relative" }}>
                 {displayImage ? (
-                  <img
+                  <Image
                     src={displayImage}
                     alt="프로필"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    width={88}
+                    height={88}
+                    style={{ objectFit: "cover" }}
+                    unoptimized
                     onError={() => setProfileImage(null)}
                   />
                 ) : (
@@ -328,7 +331,7 @@ export default function ProfilePage() {
 
         {/* ── 닉네임 수정 ── */}
         <div style={card}>
-          <SectionTitle><i className="bi bi-person-badge-fill" style={{ marginRight: 6 }} />닉네임 수정</SectionTitle>
+          <SectionTitle><i className="bi bi-person-badge-fill" style={{ marginRight: 6, color: "#2f8f5b" }} />닉네임 수정</SectionTitle>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <Label>현재 닉네임</Label>
@@ -365,7 +368,7 @@ export default function ProfilePage() {
 
         {/* ── 비밀번호 변경 ── */}
         <div style={card}>
-          <SectionTitle><i className="bi bi-shield-lock-fill" style={{ marginRight: 6 }} />비밀번호 변경</SectionTitle>
+          <SectionTitle><i className="bi bi-shield-lock-fill" style={{ marginRight: 6, color: "#2f8f5b" }} />비밀번호 변경</SectionTitle>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <Label>현재 비밀번호</Label>
@@ -417,7 +420,7 @@ export default function ProfilePage() {
 
         {/* ── 자기소개 ── */}
         <div style={card}>
-          <SectionTitle><i className="bi bi-chat-quote-fill" style={{ marginRight: 6 }} />자기소개</SectionTitle>
+          <SectionTitle><i className="bi bi-chat-quote-fill" style={{ marginRight: 6, color: "#2f8f5b" }} />자기소개</SectionTitle>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             <div>
               <textarea
@@ -443,7 +446,7 @@ export default function ProfilePage() {
         <div style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <SectionTitle><i className="bi bi-hash" style={{ marginRight: 6 }} />관심 태그 수정</SectionTitle>
+              <SectionTitle><i className="bi bi-hash" style={{ marginRight: 6, color: "#2f8f5b" }} />관심 태그 수정</SectionTitle>
               <p style={{ fontSize: 12, color: "#888", margin: "4px 0 0" }}>
                 관심 있는 태그를 선택해 보세요.
               </p>
@@ -481,7 +484,7 @@ export default function ProfilePage() {
                         padding: "6px 14px",
                         borderRadius: 20,
                         border: selected ? `1.5px solid ${GREEN}` : "1.5px solid #ddd",
-                        background: selected ? `linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})` : "white",
+                        background: selected ? `${GREEN}` : "white",
                         color: selected ? "white" : "#555",
                         fontSize: 12,
                         fontWeight: selected ? 700 : 500,
@@ -540,18 +543,22 @@ const input = {
   boxSizing: "border-box",
 };
 const greenBtn = {
-  padding: "7px 20px",
-  background: `linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})`,
+  minWidth: "90px",
+  padding: "9px 0px",
+  minHeight: "39.7px",
+  background: `${GREEN}`,
   color: "white",
   border: "none",
   borderRadius: 8,
   fontWeight: 600,
   fontSize: 12,
   cursor: "pointer",
+  transition: "all 0.2s",
 };
 const smallGreenBtn = {
   flexShrink: 0,
-  padding: "9px 14px",
+  minWidth: "90px",
+  padding: "9px 0px",
   background: GREEN,
   color: "white",
   border: "none",
@@ -559,6 +566,7 @@ const smallGreenBtn = {
   fontWeight: 600,
   fontSize: 12,
   cursor: "pointer",
+  transition: "all 0.2s",
 };
 const outlineBtn = {
   padding: "7px 16px",

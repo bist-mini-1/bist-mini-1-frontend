@@ -155,7 +155,7 @@ function CommentSection({ postId, postAuthorId }) {
   return (
     <div style={sectionStyle}>
       <h3 style={headerStyle}>
-        <i className="bi bi-chat-fill"></i>
+        <i className="bi bi-chat-fill" style={{ color: "#2f8f5b" }}></i>
         댓글 {totalCount}
       </h3>
 

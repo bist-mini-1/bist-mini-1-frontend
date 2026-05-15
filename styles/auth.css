@@ -137,7 +137,6 @@
 .slog-join-page {
   min-height: calc(100vh - 80px);
   padding: 28px 0 60px;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
 }
 
 .slog-join-layout {
@@ -228,7 +227,8 @@
 .slog-interest-tags {
   max-height: 112px;
   overflow-y: auto;
-  padding: 6px 4px 6px 2px; /* 상하 패딩 추가 */
+  padding: 6px 4px 6px 2px;
+  /* 상하 패딩 추가 */
 }
 
 .slog-interest-tags::-webkit-scrollbar {
@@ -247,7 +247,6 @@
 .slog-login-page {
   min-height: calc(100vh - 80px);
   padding: 64px 20px 80px;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
 }
 
 .slog-login-card {

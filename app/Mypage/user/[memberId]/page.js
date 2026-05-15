@@ -5,8 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { getUserProfile, getUserPosts, getFollowCount, getMyFollowings, followUser, unfollowUser, checkIsMe } from "../../../../api/mypageApi";
 
-const GREEN      = "#3cb878";
-const GREEN_DARK = "#2e7d32";
+const GREEN      = "#2f8f5b";
+const GREEN_DARK = "#26744a";
 
 export default function UserProfilePage() {
   const router   = useRouter();

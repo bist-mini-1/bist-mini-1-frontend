@@ -8,8 +8,8 @@ import { getMemberIdFromToken } from "../../../utils/tokenUtils";
 import { getBackendAbsoluteUrl } from "../../../utils/urlUtils";
 import Pagination from "../../../components/common/Pagination";
 
-const GREEN      = "#3cb878";
-const GREEN_DARK = "#2e7d32";
+const GREEN      = "#2f8f5b";
+const GREEN_DARK = "#26744a";
 const PAGE_SIZE  = 10;
 
 export default function FollowingsPage() {

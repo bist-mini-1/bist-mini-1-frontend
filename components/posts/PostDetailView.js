@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Fragment } from "react";
@@ -242,7 +243,7 @@ export default function PostDetailView({
             <aside ref={railRef} className="post-detail-rail post-detail-rail-left" aria-label="게시글 반응" style={railStyle}>
               <button
                 type="button"
-                className={`post-detail-action-button ${liked ? "is-active" : ""}`}
+                className={`post-detail-action-button post-detail-like-button ${liked ? "is-active" : ""}`}
                 onClick={onLikeClick}
                 disabled={likeLoading}
                 aria-pressed={liked}
@@ -346,18 +347,22 @@ export default function PostDetailView({
           <div className="post-author-card">
             <Link href={`/Mypage/user/${post?.memberId}`} className="post-author-avatar-link">
               {authorProfile?.profileImageUrl && String(authorProfile.profileImageUrl).trim() ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={
                     authorProfile.profileImageUrl.startsWith("http")
                       ? authorProfile.profileImageUrl
                       : getBackendAbsoluteUrl(authorProfile.profileImageUrl)
                   }
                   alt={authorProfile.nickname || getAuthorDisplayName(post)}
+                  width={48}
+                  height={48}
                   className="post-author-avatar"
+                  unoptimized
                 />
               ) : (
-                <div className="post-author-avatar post-author-avatar-placeholder">👤</div>
+                <div className="post-author-avatar post-author-avatar-placeholder">
+                  <i className="bi bi-person-fill" style={{ color: "#2f8f5b" }}></i>
+                </div>
               )}
             </Link>
 
