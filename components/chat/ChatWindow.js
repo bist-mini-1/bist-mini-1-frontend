@@ -115,13 +115,11 @@ const ChatWindow = ({ room }) => {
           const data = JSON.parse(message.body);
           
           if (data.messageType === 'READ') {
+            // 다른 사람이 읽었을 때, 그 사람이 보내지 않은(즉, 내가 보낸) 모든 메시지의 '1'을 지움
             setMessages((prev) => 
-              prev.map((m) => {
-                if (m.senderId !== data.senderId && new Date(m.createdAt) <= new Date(data.createdAt)) {
-                  return { ...m, unreadCount: 0 };
-                }
-                return m;
-              })
+              prev.map((m) => 
+                m.senderId !== data.senderId ? { ...m, unreadCount: 0 } : m
+              )
             );
           } else if (data.messageType === 'UPDATE') {
             setMessages((prev) => 
