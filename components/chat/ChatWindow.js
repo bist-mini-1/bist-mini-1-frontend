@@ -372,7 +372,7 @@ const ChatWindow = ({ room }) => {
                     width: '40px', 
                     height: '40px', 
                     minWidth: '40px',
-                    background: 'var(--slog-green-gradient, #28a745)',
+                    background: 'var(--slog-green-gradient, #2f8f5b)',
                     border: 'none',
                     display: 'flex',
                     alignItems: 'center',

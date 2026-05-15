@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { getMyPosts } from "../../../api/mypageApi";
 
-const GREEN = "#3cb878";
-const GREEN_DARK = "#2e7d32";
+const GREEN = "#2f8f5b";
+const GREEN_DARK = "#26744a";
 
 function calcLevel(postCount) {
   const exp = postCount * 50;
@@ -26,14 +26,14 @@ const ROADMAP = [
   { lv: 1, title: "새싹",          exp: 0,    icon: "bi-flower1",    color: "#a5d6a7" },
   { lv: 2, title: "성실한 새싹",   exp: 200,  icon: "bi-tree",       color: "#66bb6a" },
   { lv: 3, title: "열정 학습자",   exp: 400,  icon: "bi-tree-fill",  color: "#43a047" },
-  { lv: 4, title: "꾸준한 기록자", exp: 600,  icon: "bi-tree-fill",  color: "#2e7d32" },
-  { lv: 5, title: "학습 마스터",   exp: 800,  icon: "bi-award-fill", color: "#1b5e20" },
+  { lv: 4, title: "꾸준한 기록자", exp: 600,  icon: "bi-tree-fill",  color: "#26744a" },
+  { lv: 5, title: "학습 마스터",   exp: 800,  icon: "bi-award-fill", color: "#26744a" },
   { lv: 6, title: "전설의 기록자", exp: 1000, icon: "bi-gem",        color: "#f9a825" },
 ];
 
 function charIcon(level) {
   if (level >= 5) return { icon: "bi-gem",        color: "#f9a825" };
-  if (level >= 3) return { icon: "bi-tree-fill",  color: "#2e7d32" };
+  if (level >= 3) return { icon: "bi-tree-fill",  color: "#26744a" };
   return               { icon: "bi-flower1",     color: "#66bb6a" };
 }
 
@@ -99,7 +99,7 @@ export default function CharacterPage() {
                   <span>다음 레벨까지 {nextExp - currentExp} 남음</span>
                 </div>
                 <div style={{ background: "#e8f5e9", borderRadius: 99, height: 10, overflow: "hidden" }}>
-                  <div style={{ width: `${(currentExp / nextExp) * 100}%`, height: "100%", background: `linear-gradient(90deg, ${GREEN}, ${GREEN_DARK})`, borderRadius: 99, transition: "width 0.8s ease" }} />
+                  <div style={{ width: `${(currentExp / nextExp) * 100}%`, height: "100%", background: `${GREEN}`, borderRadius: 99, transition: "width 0.8s ease" }} />
                 </div>
               </div>
               <div style={{ fontSize: 12, color: "#888" }}>
@@ -112,7 +112,7 @@ export default function CharacterPage() {
         {/* 통계 카드 */}
         <div style={{ ...card, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, padding: 0, overflow: "hidden" }}>
           {[
-            { icon: "bi-file-earmark-text-fill", label: "작성한 글", value: loading ? "…" : stats.postCount, color: "#2e7d32" },
+            { icon: "bi-file-earmark-text-fill", label: "작성한 글", value: loading ? "…" : stats.postCount, color: "#26744a" },
             { icon: "bi-eye-fill",              label: "총 조회수",  value: loading ? "…" : stats.viewCount,  color: "#1565c0" },
             { icon: "bi-suit-heart-fill",       label: "총 좋아요",  value: loading ? "…" : stats.likeCount,  color: "#c62828" },
           ].map(({ icon, label, value, color }, i) => (

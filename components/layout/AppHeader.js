@@ -86,43 +86,35 @@ export default function AppHeader() {
                     height: "36px",
                     borderRadius: "50%",
                     overflow: "hidden",
-                    background: "#198754",
+                    background: "#26744a",
                     color: "white",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontSize: "15px",
                     fontWeight: "bold",
+                    lineHeight: 1,
                     boxShadow: "0 2px 6px rgba(25,135,84,0.3)",
                   }}
                 >
                     {profileImgUrl ? (
-                      <img
+                      <Image
                         src={profileImgUrl}
                         alt="프로필"
+                        width={36}
+                        height={36}
                         style={{
-                          width: "100%",
-                          height: "100%",
                           objectFit: "cover",
                         }}
+                        unoptimized
                         onError={(e) => {
                           setProfileImgUrl(null);
                         }}
                       />
                     ) : (
-                      <div
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {authInfo.nickname
-                          ? authInfo.nickname.charAt(0).toUpperCase()
-                          : "U"}
-                      </div>
+                      authInfo.nickname
+                        ? authInfo.nickname.charAt(0).toUpperCase()
+                        : "U"
                     )}
                 </div>
               </button>

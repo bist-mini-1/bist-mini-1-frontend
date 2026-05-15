@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { getMyPosts } from "../../../api/mypageApi";
 
-const GREEN = "#3cb878";
-const GREEN_DARK = "#2e7d32";
+const GREEN = "#2f8f5b";
+const GREEN_DARK = "#26744a";
 
 function buildCalendar(year, month, postDates) {
   const firstDay = new Date(year, month, 1).getDay();

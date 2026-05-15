@@ -63,7 +63,10 @@ export default function RecommendedPostList({ postId }) {
     return (
       <section className="recommended-post-section">
         <div className="recommended-post-header">
-          <h3 className="recommended-post-title">추천 게시물</h3>
+          <h3 className="recommended-post-title">
+            <i className="bi bi-stars me-2" style={{ color: "#2f8f5b" }}></i>
+            추천 게시물
+          </h3>
           <p className="recommended-post-subtitle">
             비슷한 태그를 가진 게시물을 찾고 있어요.
           </p>
@@ -83,7 +86,10 @@ export default function RecommendedPostList({ postId }) {
   return (
     <section className="recommended-post-section">
       <div className="recommended-post-header">
-        <h3 className="recommended-post-title">추천 게시물</h3>
+        <h3 className="recommended-post-title">
+          <i className="bi bi-stars me-2" style={{ color: "#2f8f5b" }}></i>
+          추천 게시물
+        </h3>
         <p className="recommended-post-subtitle">
           비슷한 태그를 가진 게시물이에요.
         </p>

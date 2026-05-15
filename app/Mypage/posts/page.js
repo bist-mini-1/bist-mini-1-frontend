@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import PostList from "../../../components/posts/PostList";
 import { getMyPosts, getBookmarkedPosts } from "../../../api/mypageApi";
 
-const GREEN = "#3cb878";
-const GREEN_DARK = "#2e7d32";
+const GREEN = "#2f8f5b";
+const GREEN_DARK = "#26744a";
 
 const TABS = [
   { key: "my",       label: "내가 쓴 글",  icon: "bi-pen-fill" },
@@ -107,7 +107,7 @@ export default function PostsPage() {
                 fontWeight: active ? 700 : 500,
                 fontSize: 13,
                 background: active
-                  ? `linear-gradient(135deg, ${GREEN}, ${GREEN_DARK})`
+                  ? `${GREEN}`
                   : "transparent",
                 color: active ? "white" : "#666",
                 transition: "all 0.15s",

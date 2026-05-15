@@ -162,7 +162,7 @@ const ChatWidget = () => {
              }}>
           
           <div className="chat-header d-flex justify-content-between align-items-center px-4 py-3" 
-               style={{ background: 'var(--slog-green-gradient, #28a745)', color: '#fff' }}>
+               style={{ background: 'var(--slog-green-gradient, #2f8f5b)', color: '#fff' }}>
             <div className="d-flex align-items-center">
               {currentRoom && (
                 <button className="btn btn-link text-white p-0 me-2" onClick={handleBackToList}>
@@ -196,7 +196,7 @@ const ChatWidget = () => {
           width: '60px', 
           height: '60px', 
           fontSize: '24px',
-          background: isOpen ? '#6c757d' : '#28a745',
+          background: isOpen ? '#6c757d' : '#2f8f5b',
           border: 'none',
           transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           color: '#fff'
