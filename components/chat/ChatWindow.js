@@ -115,24 +115,30 @@ const ChatWindow = ({ room }) => {
           const data = JSON.parse(message.body);
           
           if (data.messageType === 'READ') {
-            // 다른 사람이 읽었을 때, 그 사람이 보내지 않은(즉, 내가 보낸) 모든 메시지의 '1'을 지움
-            setMessages((prev) => 
-              prev.map((m) => 
-                m.senderId !== data.senderId ? { ...m, unreadCount: 0 } : m
-              )
-            );
+            const readerId = Number(data.senderId);
+            // 내가 아닌 다른 사람이 읽었을 때, 내가 보낸 모든 메시지의 '1'을 지움
+            if (memberId && readerId !== memberId) {
+              setMessages((prev) => 
+                prev.map((m) => Number(m.senderId) === memberId ? { ...m, unreadCount: 0 } : m)
+              );
+            }
           } else if (data.messageType === 'UPDATE') {
             setMessages((prev) => 
               prev.map((m) => m.messageId === data.messageId ? { ...m, ...data } : m)
             );
           } else if (data.messageType === 'DELETE') {
-            // 하드 삭제 대비 (필요시)
             setMessages((prev) => prev.filter((m) => m.messageId !== data.messageId));
           } else {
             setMessages((prev) => [...prev, data]);
             setTimeout(scrollToBottom, 50);
-            if (memberId && data.senderId !== memberId) {
+            
+            // 상대방의 메시지를 받았을 때
+            if (memberId && Number(data.senderId) !== memberId) {
               handleMarkAsRead();
+              // [Fallback] 상대방이 답장을 보냈다면 내 이전 메시지들을 다 읽었다는 뜻이므로 로컬에서 즉시 '1' 제거
+              setMessages((prev) => 
+                prev.map((m) => Number(m.senderId) === memberId ? { ...m, unreadCount: 0 } : m)
+              );
             }
           }
         });
@@ -146,7 +152,7 @@ const ChatWindow = ({ room }) => {
     return () => {
       if (stompClient.current) stompClient.current.deactivate();
     };
-  }, [room.roomId]);
+  }, [room.roomId, memberId]);
 
   // 읽음 처리 핸들러
   const handleMarkAsRead = async () => {
