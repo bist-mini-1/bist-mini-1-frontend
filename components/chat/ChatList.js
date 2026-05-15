@@ -3,21 +3,28 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { getChatRooms, getFollowingList, getOrCreatePersonalRoom } from '@/api/chatApi';
-
+import useAuth from '@/hooks/useAuth';
 import { getBackendAbsoluteUrl } from '@/utils/urlUtils';
 
 /**
  * 채팅방 목록 및 팔로우 목록 컴포넌트
  */
 const ChatList = ({ onSelectRoom }) => {
+  const { authInfo } = useAuth();
   const [rooms, setRooms] = useState([]); // 참여 중인 방
   const [followings, setFollowings] = useState([]); // 팔로우 중인 사람
   const [showFollowing, setShowFollowing] = useState(false); // 팔로우 목록 표시 여부
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchRooms();
-  }, []);
+    if (authInfo.isLogin) {
+      fetchRooms();
+    } else {
+      setRooms([]);
+      setFollowings([]);
+      setShowFollowing(false);
+    }
+  }, [authInfo.isLogin]);
 
   // 참여 중인 채팅방 목록 조회
   const fetchRooms = async () => {
@@ -37,13 +44,17 @@ const ChatList = ({ onSelectRoom }) => {
       try {
         setLoading(true);
         // localStorage에서 내 정보 가져오기
-        const myId = localStorage.getItem('memberId');
-        if (!myId) {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
           alert("로그인이 필요합니다.");
           return;
         }
         
-        const data = await getFollowingList(myId);
+        // 내 정보 조회는 API 호출 시 토큰으로 처리됨
+        // 여기서는 팔로우 목록 조회를 위해 myId가 필요할 수 있으나, 
+        // 백엔드에서 @LoginMember로 처리하므로 굳이 myId를 넘길 필요가 없음 (API 수정 필요할 수도 있음)
+        
+        const data = await getFollowingList();
         setFollowings(data.users || []); // FollowListResponse에서 users 추출
         setShowFollowing(true);
       } catch (error) {

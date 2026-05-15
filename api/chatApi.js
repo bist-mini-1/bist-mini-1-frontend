@@ -48,8 +48,8 @@ export const deleteMessage = async (messageId) => {
   return res.data;
 };
 
-// 팔로잉 목록 조회
-export const getFollowingList = async (memberId) => {
-  const res = await axiosInstance.get(`/api/follows/${memberId}/followings`);
+// 팔로잉 목록 조회 (내 팔로잉 목록)
+export const getFollowingList = async () => {
+  const res = await axiosInstance.get("/api/follows/me/followings");
   return res.data.data; // FollowListResponse { count, users }
 };
