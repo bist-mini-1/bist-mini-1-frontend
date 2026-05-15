@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import CommentForm from "./CommentForm";
 import CommentList from "./CommentList";
 import { getComments, createComment } from "@/api/commentApi";
+import useAuth from "@/hooks/useAuth";
 
 /**
  * 평탄화된 댓글 배열을 트리 구조로 변환하는 헬퍼 함수
@@ -21,9 +22,12 @@ const buildCommentTree = (flatList) => {
       map[item.parentId].replies.push(map[item.commentId]);
       // 대댓글은 과거순(오래된 순)으로 정렬하여 대화 흐름 유지
       map[item.parentId].replies.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    } else {
+    } else if (!item.parentId) {
+      // 부모가 없는 최상위 댓글인 경우에만 roots에 추가
       roots.push(map[item.commentId]);
     }
+    // 부모 ID는 있는데 현재 리스트에 부모가 없는 경우( orphaned replies )는 roots에 추가하지 않음
+    // 이는 추후 '더보기' 등을 통해 부모가 로드될 때 자연스럽게 트리에 포함됨
   });
 
   // 최신순 정렬 (최신이 위로)
@@ -36,6 +40,7 @@ const buildCommentTree = (flatList) => {
  * @param {number} postAuthorId - 게시글 작성자 ID
  */
 function CommentSection({ postId, postAuthorId }) {
+  const { authInfo } = useAuth();
   const [flatComments, setFlatComments] = useState([]); // 누적된 평탄 리스트
   const [comments, setComments] = useState([]); // 트리 구조 리스트
   const [loading, setLoading] = useState(true);
@@ -71,9 +76,10 @@ function CommentSection({ postId, postAuthorId }) {
       const result = await getComments(postId, targetPage, PAGE_SIZE);
       const newComments = result?.comments || [];
       const total = result?.totalCount || 0;
+      const totalComments = result?.totalComments || total;
       const best = result?.bestComment || null;
 
-      setTotalCount(total);
+      setTotalCount(totalComments);
 
       if (!isMore) {
         setBestComment(best);
@@ -91,7 +97,9 @@ function CommentSection({ postId, postAuthorId }) {
       }
 
       // 더 가져올 데이터가 있는지 확인 (현재 로드된 댓글 수가 전체 수보다 적으면 더보기 노출)
-      setHasMore((isMore ? flatComments.length + newComments.length : newComments.length) < total);
+      // result.totalCount는 서버에서 넘겨준 최상위 댓글 수(totalRoots)임
+      const currentRoots = (isMore ? flatComments.filter(c => !c.parentId).length + newComments.filter(c => !c.parentId).length : newComments.filter(c => !c.parentId).length);
+      setHasMore(currentRoots < total);
 
     } catch (err) {
       console.error("댓글 로딩 실패:", err);
@@ -105,7 +113,7 @@ function CommentSection({ postId, postAuthorId }) {
   useEffect(() => {
     fetchComments(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId]);
+  }, [postId, authInfo.isLogin]);
 
   const handleCommentSubmit = async (content) => {
     try {
