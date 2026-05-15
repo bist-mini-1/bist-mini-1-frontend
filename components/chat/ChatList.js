@@ -26,6 +26,17 @@ const ChatList = ({ onSelectRoom }) => {
     }
   }, [authInfo.isLogin]);
 
+  // 외부(SSE 등)에서의 읽음 상태 변화 감지
+  useEffect(() => {
+    const handleUpdate = () => {
+      if (authInfo.isLogin && !showFollowing) {
+        fetchRooms();
+      }
+    };
+    window.addEventListener('chat_unread_update', handleUpdate);
+    return () => window.removeEventListener('chat_unread_update', handleUpdate);
+  }, [authInfo.isLogin, showFollowing]);
+
   // 참여 중인 채팅방 목록 조회
   const fetchRooms = async () => {
     try {

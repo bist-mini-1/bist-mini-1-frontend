@@ -39,6 +39,7 @@ const ChatWidget = () => {
       onChatUnreadUpdate: () => {
         console.log('SSE (ChatWidget): 채팅 안 읽음 카운트 갱신 이벤트 수신');
         fetchTotalUnread();
+        window.dispatchEvent(new Event("chat_unread_update"));
       },
       onNotification: () => {
         fetchTotalUnread();
