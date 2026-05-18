@@ -1,0 +1,338 @@
+.slog-post-card {
+  height: 380px;
+  overflow: hidden;
+  border-radius: 10px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.slog-post-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+}
+
+.slog-post-card:focus {
+  outline: none;
+}
+
+.slog-post-thumbnail {
+  position: relative;
+  width: 100%;
+  height: 170px;
+  flex-shrink: 0;
+  background-color: #f6f8f7;
+  overflow: hidden;
+}
+
+.slog-post-card-body {
+  height: 165px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.slog-post-tags {
+  height: 24px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.slog-post-no-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f4fbf6 0%, var(--slog-green-soft) 100%);
+  color: var(--slog-green);
+}
+
+.slog-tag {
+  background-color: var(--slog-green-soft);
+  color: var(--slog-green);
+  font-weight: 700;
+}
+
+.slog-post-title {
+  height: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.slog-post-preview {
+  height: 45px;
+  margin-bottom: 14px;
+  color: var(--slog-text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.slog-post-meta {
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.slog-post-footer {
+  height: 45px;
+  flex-shrink: 0;
+  border-top: 1px solid #f0f2f1;
+}
+
+.slog-like-button {
+  color: #adb5bd;
+  font-weight: 800;
+  background-color: transparent;
+  transition: color 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.slog-like-button:hover {
+  color: var(--slog-heart);
+  transform: translateY(-1px);
+}
+
+.slog-like-button.liked {
+  color: var(--slog-heart);
+}
+
+.slog-like-button:disabled {
+  opacity: 0.6;
+}
+
+.slog-bookmark-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.94);
+  color: #adb5bd;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease,
+    background-color 0.15s ease;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.slog-post-card:hover .slog-bookmark-button,
+.slog-bookmark-button.bookmarked {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slog-bookmark-button:hover {
+  background-color: #ffffff;
+  color: var(--slog-green);
+}
+
+.slog-bookmark-button.bookmarked {
+  color: var(--slog-green);
+}
+
+.slog-bookmark-button:disabled {
+  opacity: 0.6;
+}
+
+.post-editor-shell {
+  border: 1px solid var(--slog-green-border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.05);
+
+  /* 에디터 폰트 불일치로 인한 커서 밀림 방지 */
+  --w-md-editor-font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace !important;
+}
+
+.post-editor-shell.is-invalid {
+  border-color: var(--bs-form-invalid-border-color, #dc3545);
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.08);
+}
+
+.post-editor-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+
+.post-editor-shell .w-md-editor {
+  border: 0;
+  box-shadow: none;
+}
+
+.post-editor-shell .w-md-editor-text-pre,
+.post-editor-shell .w-md-editor-text-input,
+.post-editor-shell .w-md-editor-text,
+.post-editor-shell .w-md-editor-text * {
+  font-family: var(--w-md-editor-font-family) !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+}
+
+.post-markdown-body {
+  color: #1f2937;
+  line-height: 1.85;
+  word-break: break-word;
+  text-align: left;
+  /* 좌측 정렬 명시 */
+}
+
+.post-markdown-body h1,
+.post-markdown-body h2,
+.post-markdown-body h3,
+.post-markdown-body h4,
+.post-markdown-body h5,
+.post-markdown-body h6 {
+  color: #111827;
+  font-weight: 800;
+  margin-top: 1.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.post-markdown-body p {
+  margin: 0 0 1rem;
+}
+
+.post-markdown-body img {
+  display: block;
+  width: 100%;
+  /* 너비 꽉 채우기 */
+  height: auto;
+  margin: 1.5rem 0;
+  /* 좌측 정렬 및 간격 조정 */
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.post-markdown-body pre {
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  overflow-x: auto;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.post-markdown-body code {
+  font-size: 0.95em;
+}
+
+.post-markdown-body blockquote {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--slog-green);
+  background: #f8faf9;
+  color: #374151;
+  border-radius: 0 14px 14px 0;
+}
+
+/* 첨부파일 다운로드 블록 스타일 */
+.attachment-block {
+  margin: 1rem 0;
+}
+
+.attachment-download {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-decoration: none;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #ffffff, #fbfcfd);
+  border: 1px solid #e6eef3;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+}
+
+.attachment-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f7fb;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.attachment-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.attachment-name {
+  font-weight: 700;
+}
+
+.attachment-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+
+.recommended-post-section {
+  max-width: 860px;
+  margin: 24px auto 40px;
+  padding: 0 16px;
+}
+
+.recommended-post-header {
+  margin-bottom: 16px;
+}
+
+.recommended-post-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.recommended-post-subtitle {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #6c757d;
+}
+
+.recommended-post-section .slog-post-card {
+  height: 330px;
+}
+
+.recommended-post-section .slog-post-thumbnail {
+  height: 135px;
+}
+
+.recommended-post-section .slog-post-card-body {
+  height: 150px;
+  padding: 14px;
+}
+
+.recommended-post-section .slog-post-preview {
+  height: 42px;
+  margin-bottom: 10px;
+}
+
+.recommended-post-section .slog-post-footer {
+  height: 45px;
+}

@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  allowedDevOrigins: ["192.168.5.3", "192.168.5.28", "192.168.5.50"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8080",
+        pathname: "/api/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
